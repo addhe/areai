@@ -230,10 +230,168 @@ gcloud functions rollback FUNCTION_NAME VERSION_ID
 
 ---
 
-## **14. Post-Deployment Checklist**
+## **14. Deployment ke Google Cloud Run**
+
+### **14.1 Persiapan Deployment**
+
+1. Buat file `Dockerfile` di root project:
+
+```Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy requirements dan install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV CUSTOMER_API_ENDPOINT="https://nasabah-api-361046956504.asia-southeast2.run.app/nasabah"
+ENV CUSTOMER_API_KEY="your-api-key-here"
+
+# Expose port untuk Cloud Run
+EXPOSE 8080
+
+# Run the application
+CMD ["python", "cloud_run_server.py"]
+```
+
+2. Buat file `cloud_run_server.py` untuk endpoint HTTP:
+
+```python
+import os
+import json
+import base64
+import logging
+from flask import Flask, request, jsonify
+from cloud_function.main import process_email, validate_message
+
+app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({"status": "healthy", "service": "auto-reply-email"})
+
+@app.route("/process", methods=["POST"])
+def handle_request():
+    try:
+        envelope = request.get_json()
+        if not envelope:
+            return jsonify({"error": "no Pub/Sub message received"}), 400
+
+        if not isinstance(envelope, dict) or "message" not in envelope:
+            return jsonify({"error": "invalid Pub/Sub message format"}), 400
+
+        # Process the Pub/Sub message
+        pubsub_message = envelope["message"]
+        if not validate_message(pubsub_message):
+            return jsonify({"error": "invalid message format"}), 400
+
+        # Process the email
+        result = process_email(pubsub_message)
+        return jsonify({"success": True, "result": result})
+
+    except Exception as e:
+        logger.exception(f"Error processing request: {e}")
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    PORT = int(os.getenv("PORT", 8080))
+    app.run(host="0.0.0.0", port=PORT, debug=False)
+```
+
+3. Buat atau perbarui `requirements.txt` untuk Cloud Run:
+
+```
+flask==2.3.3
+gunicorn==21.2.0
+google-cloud-pubsub==2.18.4
+google-cloud-aiplatform==1.36.4
+google-auth==2.23.0
+google-api-python-client==2.108.0
+requests==2.31.0
+python-dotenv==1.0.0
+```
+
+### **14.2 Build dan Deploy ke Cloud Run**
+
+1. Build container image dan push ke Container Registry:
+
+```bash
+# Set variabel project
+export PROJECT_ID=$(gcloud config get-value project)
+
+# Build image dengan Cloud Build
+gcloud builds submit --tag gcr.io/$PROJECT_ID/auto-reply-email .
+```
+
+2. Deploy ke Cloud Run:
+
+```bash
+gcloud run deploy auto-reply-email \
+  --image gcr.io/$PROJECT_ID/auto-reply-email \
+  --platform managed \
+  --region asia-southeast2 \
+  --memory 512Mi \
+  --cpu 1 \
+  --concurrency 80 \
+  --timeout 300s \
+  --service-account autoreply-sa@$PROJECT_ID.iam.gserviceaccount.com \
+  --set-env-vars="CUSTOMER_API_ENDPOINT=https://nasabah-api-endpoint.example.com,CUSTOMER_API_KEY=your-api-key-here"
+```
+
+### **14.3 Konfigurasi Pub/Sub Trigger untuk Cloud Run**
+
+1. Buat service account untuk Pub/Sub:
+
+```bash
+gcloud iam service-accounts create pubsub-cloud-run-invoker \
+  --display-name "Pub/Sub Cloud Run Invoker"
+```
+
+2. Berikan izin ke service account:
+
+```bash
+gcloud run services add-iam-policy-binding auto-reply-email \
+  --member="serviceAccount:pubsub-cloud-run-invoker@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
+```
+
+3. Buat Pub/Sub subscription dengan push ke Cloud Run:
+
+```bash
+gcloud pubsub subscriptions create cloud-run-email-subscription \
+  --topic=new-email \
+  --push-endpoint=$(gcloud run services describe auto-reply-email --format="value(status.url)")/process \
+  --push-auth-service-account=pubsub-cloud-run-invoker@$PROJECT_ID.iam.gserviceaccount.com
+```
+
+### **14.4 Scaling dan Performance**
+
+* Cloud Run akan otomatis scale berdasarkan load
+* Konfigurasi default: 0-100 instances
+* Untuk mengatur min/max instances:
+
+```bash
+gcloud run services update auto-reply-email \
+  --min-instances=1 \
+  --max-instances=10
+```
+
+## **15. Post-Deployment Checklist**
 
 * [ ] API Gmail dan Pub/Sub aktif.  
 * [ ] Fungsi auto-reply berhasil trigger dari email masuk.  
 * [ ] Balasan AI sesuai prompt dan tone.  
 * [ ] Log tercatat di Cloud Logging.  
 * [ ] Monitoring alert aktif.
+* [ ] Cloud Run service berjalan dan dapat menerima request.
+* [ ] Pub/Sub berhasil trigger endpoint Cloud Run.

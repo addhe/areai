@@ -1,0 +1,10 @@
+/**
+ * Auto Reply Email with AI (Vertex AI Gemini)
+ * Example Terraform variables file
+ * Copy this file to terraform.tfvars and update with your values
+ */
+
+project_id           = "your-gcp-project-id"
+region               = "us-central1"
+customer_api_endpoint = "https://api.example.com/customers"
+notification_channels = ["projects/your-project/notificationChannels/channel-id"]

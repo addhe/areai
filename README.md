@@ -31,6 +31,7 @@ Sistem auto-reply email berbasis AI yang secara otomatis membalas email masuk me
 2. **Pub/Sub** - Mekanisme event-driven untuk trigger Cloud Function
 3. **Cloud Function** - Memproses email dan berinteraksi dengan Vertex AI
 4. **Vertex AI Gemini** - Menghasilkan konten balasan berbasis konteks email
+5. **Nasabah API** - Memverifikasi status pelanggan dan mengambil data untuk personalisasi balasan
 
 ## ⚙️ Prerequisites
 
@@ -93,7 +94,8 @@ gcloud functions deploy auto-reply-email \
   --service-account autoreply-sa@PROJECT_ID.iam.gserviceaccount.com \
   --region us-central1 \
   --memory 256MB \
-  --timeout 60s
+  --timeout 60s \
+  --set-env-vars CUSTOMER_API_ENDPOINT=https://nasabah-api-endpoint.example.com,CUSTOMER_API_KEY=your-api-key
 ```
 
 ## 📊 Monitoring & Alerting

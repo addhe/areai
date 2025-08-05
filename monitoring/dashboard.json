@@ -1,0 +1,153 @@
+{
+  "displayName": "Auto Reply Email Dashboard",
+  "gridLayout": {
+    "columns": "2",
+    "widgets": [
+      {
+        "title": "Email Processing Rate",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" metric.type=\"cloudfunctions.googleapis.com/function/execution_count\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "alignmentPeriod": "60s"
+                  }
+                },
+                "unitOverride": "1"
+              },
+              "plotType": "LINE",
+              "targetAxis": "Y1"
+            }
+          ],
+          "yAxis": {
+            "label": "Emails per minute",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Response Time",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" metric.type=\"cloudfunctions.googleapis.com/function/execution_times\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_PERCENTILE_99",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "alignmentPeriod": "60s"
+                  }
+                },
+                "unitOverride": "ms"
+              },
+              "plotType": "LINE",
+              "targetAxis": "Y1"
+            }
+          ],
+          "yAxis": {
+            "label": "Response time (ms)",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Error Rate",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" severity>=ERROR",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "alignmentPeriod": "60s"
+                  }
+                },
+                "unitOverride": "1"
+              },
+              "plotType": "LINE",
+              "targetAxis": "Y1"
+            }
+          ],
+          "yAxis": {
+            "label": "Errors per minute",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Success Rate",
+        "pieChart": {
+          "chartType": "PIE",
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" metric.type=\"cloudfunctions.googleapis.com/function/execution_count\" metric.labels.status=\"ok\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "alignmentPeriod": "3600s"
+                  }
+                }
+              }
+            },
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" metric.type=\"cloudfunctions.googleapis.com/function/execution_count\" metric.labels.status!=\"ok\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "alignmentPeriod": "3600s"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "title": "Memory Usage",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" metric.type=\"cloudfunctions.googleapis.com/function/user_memory_bytes\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_PERCENTILE_99",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "alignmentPeriod": "60s"
+                  }
+                },
+                "unitOverride": "By"
+              },
+              "plotType": "LINE",
+              "targetAxis": "Y1"
+            }
+          ],
+          "yAxis": {
+            "label": "Memory usage (bytes)",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Recent Errors",
+        "logsPanel": {
+          "filter": "resource.type=\"cloud_function\" resource.labels.function_name=\"auto-reply-email\" severity>=ERROR",
+          "resourceNames": [
+            "projects/${PROJECT_ID}"
+          ]
+        }
+      }
+    ]
+  }
+}

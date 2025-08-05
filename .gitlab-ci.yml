@@ -1,0 +1,123 @@
+---
+# Auto Reply Email with AI (Vertex AI Gemini)
+# GitLab CI/CD Pipeline Configuration
+
+stages:
+  - validate
+  - test
+  - build
+  - deploy
+  - verify
+
+variables:
+  PYTHON_VERSION: "3.11"
+  TF_VERSION: "1.5.7"
+  GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+  GCP_REGION: ${GCP_REGION}
+  CUSTOMER_API_ENDPOINT: ${CUSTOMER_API_ENDPOINT}
+
+# Cache dependencies between jobs
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .venv/
+    - .terraform/
+
+# Validate Python code
+python-lint:
+  stage: validate
+  image: python:${PYTHON_VERSION}
+  script:
+    - pip install flake8 black isort
+    - flake8 cloud_function/ scripts/
+    - black --check cloud_function/ scripts/
+    - isort --check cloud_function/ scripts/
+  rules:
+    - changes:
+        - cloud_function/**/*
+        - scripts/**/*
+
+# Validate Terraform code
+terraform-validate:
+  stage: validate
+  image: hashicorp/terraform:${TF_VERSION}
+  script:
+    - cd terraform
+    - terraform init -backend=false
+    - terraform validate
+    - terraform fmt -check
+  rules:
+    - changes:
+        - terraform/**/*
+
+# Run unit tests
+unit-tests:
+  stage: test
+  image: python:${PYTHON_VERSION}
+  script:
+    - pip install -r cloud_function/requirements.txt
+    - pip install pytest pytest-cov
+    - pytest --cov=cloud_function tests/unit/
+  artifacts:
+    paths:
+      - coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  rules:
+    - changes:
+        - cloud_function/**/*
+        - tests/unit/**/*
+
+# Build and package Cloud Function
+build-function:
+  stage: build
+  image: python:${PYTHON_VERSION}
+  script:
+    - mkdir -p dist
+    - cd cloud_function
+    - zip -r ../dist/function.zip .
+  artifacts:
+    paths:
+      - dist/function.zip
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
+
+# Deploy infrastructure with Terraform
+deploy-terraform:
+  stage: deploy
+  image: hashicorp/terraform:${TF_VERSION}
+  script:
+    - cd terraform
+    - echo "project_id = \"${GCP_PROJECT_ID}\"" > terraform.tfvars
+    - echo "region = \"${GCP_REGION}\"" >> terraform.tfvars
+    - echo "customer_api_endpoint = \"${CUSTOMER_API_ENDPOINT}\"" >> terraform.tfvars
+    - terraform init
+    - terraform plan -out=tfplan
+    - terraform apply -auto-approve tfplan
+  dependencies:
+    - build-function
+  environment:
+    name: ${CI_COMMIT_BRANCH}
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# Verify deployment
+verify-deployment:
+  stage: verify
+  image: google/cloud-sdk:latest
+  script:
+    - gcloud auth activate-service-account --key-file=$GCP_SA_KEY
+    - gcloud config set project ${GCP_PROJECT_ID}
+    - gcloud functions describe auto-reply-email --region=${GCP_REGION} --format=json
+    - gcloud pubsub topics describe new-email --format=json
+  environment:
+    name: ${CI_COMMIT_BRANCH}
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+  needs:
+    - deploy-terraform

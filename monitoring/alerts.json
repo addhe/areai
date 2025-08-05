@@ -1,0 +1,138 @@
+[
+  {
+    "displayName": "Auto Reply Email - Error Rate > 1%",
+    "combiner": "OR",
+    "conditions": [
+      {
+        "displayName": "Error rate exceeds 1%",
+        "conditionThreshold": {
+          "filter": "resource.type=\"cloud_function\" AND resource.labels.function_name=\"auto-reply-email\" AND severity>=ERROR",
+          "aggregations": [
+            {
+              "alignmentPeriod": "300s",
+              "perSeriesAligner": "ALIGN_RATE"
+            }
+          ],
+          "comparison": "COMPARISON_GT",
+          "thresholdValue": 0.01,
+          "duration": "300s",
+          "trigger": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "alertStrategy": {
+      "autoClose": "1800s",
+      "notificationRateLimit": {
+        "period": "300s"
+      }
+    },
+    "documentation": {
+      "content": "## Error Rate Alert\n\nThe Auto Reply Email function is experiencing an error rate above 1%.\n\n### Troubleshooting Steps:\n1. Check Cloud Logging for detailed error messages\n2. Verify Gmail API quotas and limits\n3. Check Vertex AI service status\n4. Verify OAuth token validity\n\n### Contact:\nEmail: support@example.com",
+      "mimeType": "text/markdown"
+    }
+  },
+  {
+    "displayName": "Auto Reply Email - Response Time > 15s",
+    "combiner": "OR",
+    "conditions": [
+      {
+        "displayName": "Response time exceeds 15 seconds",
+        "conditionThreshold": {
+          "filter": "resource.type=\"cloud_function\" AND resource.labels.function_name=\"auto-reply-email\" AND metric.type=\"cloudfunctions.googleapis.com/function/execution_times\"",
+          "aggregations": [
+            {
+              "alignmentPeriod": "300s",
+              "perSeriesAligner": "ALIGN_PERCENTILE_95"
+            }
+          ],
+          "comparison": "COMPARISON_GT",
+          "thresholdValue": 15000,
+          "duration": "300s",
+          "trigger": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "alertStrategy": {
+      "autoClose": "1800s",
+      "notificationRateLimit": {
+        "period": "300s"
+      }
+    },
+    "documentation": {
+      "content": "## Response Time Alert\n\nThe Auto Reply Email function is taking longer than 15 seconds to respond.\n\n### Troubleshooting Steps:\n1. Check Cloud Function performance metrics\n2. Verify Vertex AI response times\n3. Check for network latency issues\n4. Consider increasing Cloud Function memory allocation\n\n### Contact:\nEmail: support@example.com",
+      "mimeType": "text/markdown"
+    }
+  },
+  {
+    "displayName": "Auto Reply Email - High Invocation Rate",
+    "combiner": "OR",
+    "conditions": [
+      {
+        "displayName": "Function invocation rate exceeds threshold",
+        "conditionThreshold": {
+          "filter": "resource.type=\"cloud_function\" AND resource.labels.function_name=\"auto-reply-email\" AND metric.type=\"cloudfunctions.googleapis.com/function/execution_count\"",
+          "aggregations": [
+            {
+              "alignmentPeriod": "60s",
+              "perSeriesAligner": "ALIGN_RATE"
+            }
+          ],
+          "comparison": "COMPARISON_GT",
+          "thresholdValue": 10,
+          "duration": "300s",
+          "trigger": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "alertStrategy": {
+      "autoClose": "1800s",
+      "notificationRateLimit": {
+        "period": "300s"
+      }
+    },
+    "documentation": {
+      "content": "## High Invocation Rate Alert\n\nThe Auto Reply Email function is being invoked at an unusually high rate.\n\n### Troubleshooting Steps:\n1. Check for potential spam or email flooding\n2. Verify Pub/Sub message deduplication\n3. Check Gmail API watch configuration\n4. Consider implementing rate limiting\n\n### Contact:\nEmail: support@example.com",
+      "mimeType": "text/markdown"
+    }
+  },
+  {
+    "displayName": "Auto Reply Email - Function Crashed",
+    "combiner": "OR",
+    "conditions": [
+      {
+        "displayName": "Function crashed",
+        "conditionThreshold": {
+          "filter": "resource.type=\"cloud_function\" AND resource.labels.function_name=\"auto-reply-email\" AND severity=\"CRITICAL\"",
+          "aggregations": [
+            {
+              "alignmentPeriod": "60s",
+              "perSeriesAligner": "ALIGN_COUNT"
+            }
+          ],
+          "comparison": "COMPARISON_GT",
+          "thresholdValue": 0,
+          "duration": "0s",
+          "trigger": {
+            "count": 1
+          }
+        }
+      }
+    ],
+    "alertStrategy": {
+      "autoClose": "1800s",
+      "notificationRateLimit": {
+        "period": "300s"
+      }
+    },
+    "documentation": {
+      "content": "## Function Crash Alert\n\nThe Auto Reply Email function has crashed.\n\n### Troubleshooting Steps:\n1. Check Cloud Logging for crash details\n2. Verify function dependencies\n3. Check for recent code or configuration changes\n4. Restart the function if necessary\n\n### Contact:\nEmail: support@example.com",
+      "mimeType": "text/markdown"
+    }
+  }
+]
