@@ -42,6 +42,7 @@ Proses membalas email secara manual membutuhkan waktu dan sumber daya besar, ter
 * Vertex AI Gemini untuk menghasilkan konten balasan email.
 * Pengiriman balasan otomatis ke pengirim email.
 * Basic logging untuk setiap email yang dibalas.
+* Inquiry ke API endpoint pelanggan untuk personalisasi balasan.
 
 ### **Out-of-Scope**
 
@@ -67,10 +68,15 @@ Proses membalas email secara manual membutuhkan waktu dan sumber daya besar, ter
 * Sistem harus dapat memantau inbox Gmail secara real-time menggunakan Gmail API `watch`.
 * Sistem harus mampu mendeteksi email baru berdasarkan `historyId`.
 
-### **FR2** – AI Reply Generation
+### **FR2** – Customer Verification
 
-* Sistem harus memanggil Vertex AI Gemini untuk menghasilkan balasan email.
-* Balasan harus menyesuaikan konteks email (subject & body).
+* Sistem harus melakukan inquiry ke API endpoint pelanggan untuk memverifikasi status keanggotaan pengirim email
+* Data yang diverifikasi: alamat email pengirim dan status keanggotaan
+
+### **FR3** – AI Reply Generation
+
+* Sistem harus memanggil Vertex AI Gemini untuk menghasilkan balasan email dengan personalisasi berbasis data nasabah
+* Balasan harus menyesuaikan konteks email (subject & body) + informasi nasabah (jika terverifikasi)
 
 ### **FR3** – Auto Reply Sending
 

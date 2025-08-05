@@ -69,10 +69,17 @@ Proses manual membalas email memakan waktu dan dapat menimbulkan keterlambatan k
 
 ---
 
-### **4.2 AI Reply Generation**
+### **4.2 Customer Verification**
 
-* Konten email (subject & body) dikirim ke Vertex AI Gemini.
-* AI menghasilkan balasan profesional berdasarkan prompt standar.
+* Sistem melakukan inquiry ke API endpoint pelanggan untuk memverifikasi apakah pengirim email merupakan nasabah terdaftar
+* Data yang diverifikasi: alamat email pengirim dan status keanggotaan
+* Hasil verifikasi digunakan untuk personalisasi balasan (contoh: menyebut nama/nomor rekening jika nasabah)
+
+### **4.3 AI Reply Generation**
+
+* Konten email (subject & body) + data nasabah (jika terverifikasi) dikirim ke Vertex AI Gemini
+* AI menghasilkan balasan profesional dengan personalisasi berbasis data nasabah
+* Format personalisasi: "Hai [Nama Nasabah], terima kasih telah menghubungi kami..." 
 
 ---
 

@@ -172,6 +172,13 @@ gcloud secrets create gmail-oauth-token --replication-policy="automatic"
 gcloud secrets versions add gmail-oauth-token --data-file=token.json
 ```
 
+* Simpan endpoint API pelanggan ke Secret Manager:
+
+```bash
+gcloud secrets create customer-api-endpoint --replication-policy="automatic"
+gcloud secrets versions add customer-api-endpoint --data-file=customer_api_endpoint.txt
+```
+
 ---
 
 ## **11. Testing End-to-End**
