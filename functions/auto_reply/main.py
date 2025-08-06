@@ -19,6 +19,8 @@ from email.mime.multipart import MIMEMultipart
 from google.cloud import aiplatform
 import vertexai
 from vertexai.generative_models import GenerativeModel
+import requests
+import config
 
 # Try to import GenAI SDK (optional)
 try:
@@ -260,7 +262,32 @@ def add_auto_reply_label(service, msg_id):
         logger.error(f"Error adding auto-reply label: {e}")
         return False
 
-def generate_ai_response(email_data):
+def check_is_nasabah(email):
+    """Check if the sender is a known customer via API."""
+    logger.info(f"Checking customer status for: {email}")
+    try:
+        headers = {
+            'x-api-key': config.NASABAH_API_KEY,
+            'Accept': 'application/json'
+        }
+        params = {'email': email}
+        response = requests.get(config.NASABAH_API_URL, headers=headers, params=params, timeout=5)
+
+        if response.status_code == 200:
+            logger.info(f"Customer found for email: {email}")
+            return True
+        elif response.status_code == 404:
+            logger.info(f"Customer not found for email: {email}")
+            return False
+        else:
+            logger.error(f"Error checking customer status: API returned status {response.status_code} - {response.text}")
+            return False
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error calling Nasabah API: {e}")
+        return False # Default to not being a customer if API fails
+
+def generate_ai_response(email_data, is_nasabah):
     """Generate an AI response using GenAI SDK with Vertex AI backend."""
     try:
         logger.info("Initializing GenAI client with Vertex AI backend")
@@ -280,6 +307,9 @@ PENTING: Balas dalam Bahasa Indonesia.
 Dari: {email_data['from']}
 Subjek: {email_data['subject']}
 Pesan: {email_data['body']}
+
+Konteks Tambahan:
+- Status Pengirim: {'Nasabah Terverifikasi' if is_nasabah else 'Bukan Nasabah'}
 
 Balasan Anda harus:
 - Mengakui email mereka
@@ -399,9 +429,13 @@ def process_message(service, msg_id):
         
         logger.info(f"Processing allowed email from {email_data.get('from')} to {email_data.get('to')}")
         
-        # Generate AI response
-        logger.info("Generating AI response using Vertex AI")
-        response_text = generate_ai_response(email_data)
+        # Check if sender is a customer
+        sender_email = email_data.get('from', '').split('<')[-1].split('>')[0]
+        is_nasabah = check_is_nasabah(sender_email)
+
+        # Generate AI response with customer context
+        logger.info("Generating AI response for email")
+        response_text = generate_ai_response(email_data, is_nasabah)
         
         # Send reply
         logger.info("Sending auto-reply email")

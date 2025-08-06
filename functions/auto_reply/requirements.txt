@@ -11,3 +11,4 @@ werkzeug==2.3.7
 gunicorn==21.2.0
 setuptools>=65.5.1
 click>=8.1.7
+requests==2.31.0

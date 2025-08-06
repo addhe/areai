@@ -3,82 +3,49 @@
 Test script using GenAI SDK with Vertex AI backend
 """
 
-from google import genai
-from google.genai import types
+import os
+from main import generate_ai_response, check_is_nasabah
 
-# Configuration
-PROJECT_ID = "awanmasterpiece"
-VERTEX_MODEL = "gemini-2.5-flash-lite"
+# Set environment variable for Project ID if not already set
+os.environ.setdefault('PROJECT_ID', 'awanmasterpiece')
 
-def test_genai_vertex():
-    """Test GenAI SDK with Vertex AI backend."""
-    try:
-        print("Initializing GenAI client with Vertex AI backend...")
-        
-        # Create GenAI client with Vertex AI backend
-        client = genai.Client(
-            vertexai=True,
-            project=PROJECT_ID,
-            location="us-central1",
-        )
-        
-        print(f"Using model: {VERTEX_MODEL}")
-        
-        # Test prompt
-        prompt = """You are a helpful AI email assistant. Generate a polite and professional response to this email:
-
-From: test@example.com
-Subject: Testing auto-reply
-Message: Hello, this is a test email to check if the auto-reply system is working.
-
-Your response should:
-- Acknowledge their email
-- Be helpful and professional
-- Be concise (2-3 sentences)
-- End politely
-
-Response:"""
-        
-        # Create content
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=prompt)
-                ]
-            )
-        ]
-        
-        # Generate content config
-        generate_content_config = types.GenerateContentConfig(
-            temperature=0.7,
-            top_p=0.8,
-            max_output_tokens=256,
-            thinking_config=types.ThinkingConfig(
-                thinking_budget=0,
-            ),
-        )
-        
-        print("Generating response...")
-        response_text = ""
-        
-        for chunk in client.models.generate_content_stream(
-            model=VERTEX_MODEL,
-            contents=contents,
-            config=generate_content_config,
-        ):
-            response_text += chunk.text
-            print(chunk.text, end="")
-        
-        print(f"\n\n✅ Success! Generated response:")
-        print(f"'{response_text.strip()}'")
-        
-        return response_text.strip()
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+def run_test(email_from, subject, body):
+    """Simulates the auto-reply flow for a single email."""
+    print(f"\n--- Testing for: {email_from} ---")
+    
+    email_data = {
+        'from': email_from,
+        'subject': subject,
+        'body': body
+    }
+    
+    # 1. Check if the sender is a customer
+    is_nasabah = check_is_nasabah(email_from)
+    print(f"Customer check result: {'Nasabah' if is_nasabah else 'Bukan Nasabah'}")
+    
+    # 2. Generate AI response with the context
+    print("Generating AI response...")
+    response = generate_ai_response(email_data, is_nasabah)
+    
+    if response:
+        print("✅ Success! Generated response:")
+        print("-" * 20)
+        print(response)
+        print("-" * 20)
+    else:
+        print("❌ Error: Failed to generate AI response.")
 
 if __name__ == "__main__":
-    test_genai_vertex()
+    # Test case 1: Email from a known customer
+    run_test(
+        email_from='addhe.warman@outlook.co.id',
+        subject='Pertanyaan tentang produk',
+        body='Halo, saya ingin bertanya tentang detail produk terbaru Anda.'
+    )
+
+    # Test case 2: Email from an unknown email
+    run_test(
+        email_from='random.person@example.com',
+        subject='Kerjasama',
+        body='Selamat siang, kami ingin mengajukan proposal kerjasama.'
+    )

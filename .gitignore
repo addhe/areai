@@ -10,7 +10,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -28,8 +27,8 @@ var/
 
 # Virtual environments
 venv/
-ENV/
 env/
+ENV/
 
 # IDE files
 .idea/
@@ -41,21 +40,17 @@ env/
 *.log
 logs/
 
-# OAuth tokens
+# Credentials & Secrets
 token.json
 client_secret*.json
-
-# Service account keys
 *-key.json
 *.pem
 *.p12
 
-# Local development
+# Local development & configurations
 .DS_Store
 .terraform/
 *.tfstate
 *.tfstate.backup
 *.tfvars
-
-# Konfigurasi lokal, jangan di-commit
 functions/auto_reply/config.py
