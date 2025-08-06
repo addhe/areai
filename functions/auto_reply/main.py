@@ -345,10 +345,23 @@ def generate_ai_response(email_data, is_nasabah, customer_data=None):
         # Ekstrak informasi saldo jika tersedia
         saldo_info = ""
         if is_nasabah and customer_data and isinstance(customer_data, dict):
+            # Cek apakah data customer berada dalam array 'data'
+            if 'data' in customer_data and isinstance(customer_data['data'], list) and len(customer_data['data']) > 0:
+                customer_data = customer_data['data'][0]  # Ambil data nasabah pertama
+            
+            # Ekstrak dan format saldo dengan benar
             if 'saldo' in customer_data:
-                saldo_info = f"\n- Saldo Anda: Rp {customer_data['saldo']}"
+                saldo_value = customer_data['saldo']
+                # Format saldo dengan pemisah ribuan
+                formatted_saldo = "{:,}".format(int(saldo_value)).replace(',', '.')
+                saldo_info = f"\n- Saldo Anda: Rp {formatted_saldo}"
+                logger.info(f"Extracted saldo: {saldo_value}, formatted as: {formatted_saldo}")
             elif 'balance' in customer_data:
-                saldo_info = f"\n- Saldo Anda: Rp {customer_data['balance']}"
+                saldo_value = customer_data['balance']
+                # Format saldo dengan pemisah ribuan
+                formatted_saldo = "{:,}".format(int(saldo_value)).replace(',', '.')
+                saldo_info = f"\n- Saldo Anda: Rp {formatted_saldo}"
+                logger.info(f"Extracted balance: {saldo_value}, formatted as: {formatted_saldo}")
         
         # Buat prompt dalam Bahasa Indonesia
         prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
