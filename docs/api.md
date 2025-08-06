@@ -1,4 +1,4 @@
-# Auto Reply Email System - API Documentation
+# Sistem Balas Email Otomatis - Dokumentasi API
 
 This document provides detailed API documentation for the Auto Reply Email system, including utility modules, configuration options, and integration points.
 

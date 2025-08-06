@@ -1,4 +1,4 @@
-# Monitoring Instrumentation Guide for Auto Reply Email System
+# Panduan Instrumentasi Pemantauan untuk Sistem Balas Email Otomatis
 
 This guide explains how to instrument your Auto Reply Email system code to emit custom metrics for monitoring and alerting.
 

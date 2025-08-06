@@ -1,4 +1,4 @@
-# Scaling Guide for Auto Reply Email System
+# Panduan Penskalaan untuk Sistem Balas Email Otomatis
 
 This guide provides strategies and best practices for scaling the Auto Reply Email system to handle enterprise workloads and high email volumes.
 

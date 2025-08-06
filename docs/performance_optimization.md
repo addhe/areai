@@ -1,4 +1,4 @@
-# Performance Optimization Guide for Auto Reply Email System
+# Panduan Optimisasi Kinerja untuk Sistem Balas Email Otomatis
 
 This guide provides detailed strategies and best practices for optimizing the performance of your Auto Reply Email system to ensure it meets the 15-second response time requirement and handles high email volumes efficiently.
 

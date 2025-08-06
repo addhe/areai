@@ -1,4 +1,4 @@
-# Security Best Practices for Auto Reply Email System
+# Praktik Terbaik Keamanan untuk Sistem Balas Email Otomatis
 
 This guide outlines comprehensive security best practices for implementing, deploying, and maintaining the Auto Reply Email system on Google Cloud Platform.
 

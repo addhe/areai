@@ -1,4 +1,4 @@
-# API Reference for Auto Reply Email System
+# Referensi API untuk Sistem Balas Email Otomatis
 
 This document provides a comprehensive reference for all APIs available in the Auto Reply Email system, including Cloud Functions, internal modules, and external integrations.
 

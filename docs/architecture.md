@@ -1,4 +1,4 @@
-# Auto Reply Email System Architecture
+# Arsitektur Sistem Balas Email Otomatis
 
 This document provides a comprehensive overview of the Auto Reply Email system architecture, components, and data flow.
 
