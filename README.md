@@ -1,4 +1,34 @@
-# Auto Reply Email dengan AI (Vertex AI Gemini)
+# AI-Powered Email Auto-Reply System
+
+This repository contains the source code for an intelligent email auto-reply system built on Google Cloud Platform. It uses Vertex AI's Gemini model to generate context-aware replies to incoming emails, providing a fully automated and smart communication assistant.
+
+## Overview
+
+The core of this project is a serverless function (`functions/auto_reply`) that is triggered by new emails via Gmail API and Pub/Sub. It includes robust security features, comprehensive testing, and automated deployment scripts.
+
+## Key Documentation
+
+For detailed information, please refer to the following documents:
+
+-   **[Architecture Overview](docs/architecture.md)**: A high-level look at the system design and components.
+-   **[Deployment Guide](docs/deployment_guide.md)**: Step-by-step instructions for deploying the application to Google Cloud Run.
+-   **[Auto-Reply Function README](functions/auto_reply/README.md)**: Detailed documentation for the core auto-reply service, including its specific setup and testing procedures.
+
+## Getting Started
+
+1.  **Clone the repository**:
+    ```bash
+    git clone <repository-url>
+    ```
+2.  **Navigate to the function directory**:
+    ```bash
+    cd functions/auto_reply
+    ```
+3.  **Follow the setup instructions** in the `functions/auto_reply/README.md` file to configure authentication, permissions, and deploy the service.
+
+## Contributing
+
+Please read our [coding style guide](coding_style.md) for details on our code standards and contribution process.
 
 ![Google Cloud Platform](https://img.shields.io/badge/GCP-Cloud_Functions-4285F4?logo=google-cloud)
 ![Vertex AI](https://img.shields.io/badge/Vertex_AI-Gemini-0F9D58?logo=google-cloud)

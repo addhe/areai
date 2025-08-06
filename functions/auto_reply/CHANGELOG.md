@@ -1,5 +1,27 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [1.0.0] - 2025-08-06
+
+### Added
+-   Initial setup of the Gmail Auto-Reply system as a Flask application.
+-   Integration with Google Cloud Run for serverless deployment (`deploy.sh`).
+-   Core logic in `main.py` to handle Pub/Sub notifications from Gmail API.
+-   AI-powered response generation using Vertex AI Gemini (`generate_ai_genai.py`).
+-   Comprehensive security filters to prevent spam and reply loops.
+-   A full suite of testing scripts (`simple_test.py`, `comprehensive_test.py`, `test_genai.py`) to ensure reliability.
+-   Scripts for automating setup, including permissions (`setup_permissions.py`) and Gmail watch configuration (`setup_gmail_watch.py`).
+-   OAuth2 authentication flow (`scripts/gmail_auth.py`) to securely handle user credentials with Google Secret Manager.
+
+### Changed
+-   Refactored codebase for better modularity and readability.
+-   Switched from basic AI models to Gemini for higher quality responses.
+
+### Fixed
+-   Resolved various linting errors and improved code quality.
+-   Addressed initial authentication issues with Gmail API (`redirect_uri_mismatch`).
+
 All notable changes to the Gmail API Auto-Reply System are documented in this file.
 
 ## [2.0.0] - 2025-08-06

@@ -1,4 +1,68 @@
-# **Deployment Guide**
+# Deployment Guide
+
+This guide provides detailed instructions for deploying the AI-powered auto-reply system to Google Cloud Run.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+1.  **Google Cloud Project**: A project with billing enabled.
+2.  **gcloud CLI**: The Google Cloud command-line tool, authenticated and configured to use your project.
+3.  **Enabled APIs**:
+    -   Cloud Build API (`cloudbuild.googleapis.com`)
+    -   Cloud Run API (`run.googleapis.com`)
+    -   Gmail API (`gmail.googleapis.com`)
+    -   Pub/Sub API (`pubsub.googleapis.com`)
+    -   Vertex AI API (`aiplatform.googleapis.com`)
+    -   Secret Manager API (`secretmanager.googleapis.com`)
+4.  **Project ID**: Know your Google Cloud Project ID.
+
+## Deployment Steps
+
+The deployment process is automated via a shell script. This script handles building the Docker container, pushing it to the Artifact Registry, and deploying it as a Cloud Run service.
+
+1.  **Navigate to the function directory**:
+    ```bash
+    cd functions/auto_reply
+    ```
+
+2.  **Set Environment Variables**:
+    The `deploy.sh` script requires your Google Cloud Project ID. You can set it as an environment variable:
+    ```bash
+    export PROJECT_ID="your-gcp-project-id"
+    ```
+    Replace `your-gcp-project-id` with your actual Project ID.
+
+3.  **Run the Deployment Script**:
+    Execute the script to start the deployment:
+    ```bash
+    ./deploy.sh
+    ```
+
+    The script will perform the following actions:
+    -   Enable necessary Google Cloud services.
+    -   Build the Docker image using the `Dockerfile`.
+    -   Tag the image appropriately.
+    -   Push the image to Google Artifact Registry.
+    -   Deploy the image to Google Cloud Run, creating a new service or updating an existing one.
+
+## Post-Deployment Verification
+
+After the deployment script completes successfully, you should verify that the service is running correctly.
+
+1.  **Get the Service URL**: The deployment script will output the URL of the newly deployed service.
+2.  **Health Check**:
+    Access the root URL (`/`) of the service in a web browser or using `curl`. It should return a `200 OK` status with a JSON payload indicating a healthy status.
+    ```bash
+    curl https://your-cloud-run-service-url
+    ```
+3.  **Test the Process Endpoint**:
+    Use the `simple_test.py` or `comprehensive_test.py` scripts to send a test request to the `/process` endpoint and ensure it responds with `200 OK`.
+
+## Important Notes
+
+-   **Service Account**: The `deploy.sh` script configures the Cloud Run service to use the default Compute Engine service account. Ensure this service account has the necessary permissions as outlined in `setup_permissions.py`.
+-   **Authentication**: The application relies on OAuth2 credentials stored in Secret Manager. Make sure you have completed the `gmail_auth.py` setup before deploying.
 
 **Project**: Auto Reply Email dengan AI (Vertex AI Gemini)  
 **Document Version**: 1.0  

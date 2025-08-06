@@ -1,4 +1,54 @@
-# Gmail API Auto-Reply System
+# Gmail API Auto-Reply System with Vertex AI
+
+This directory contains a sophisticated, AI-powered email auto-reply system designed to run on Google Cloud. It leverages the Gmail API, Pub/Sub for real-time notifications, and Vertex AI (specifically the Gemini model) to generate intelligent, context-aware responses to incoming emails.
+
+## Architecture
+
+The system is designed as a serverless application, intended for deployment on Google Cloud Run. The workflow is as follows:
+
+1.  **Gmail Watch**: The Gmail API is configured to monitor a specific email account for new messages.
+2.  **Pub/Sub Notification**: When a new email arrives, Gmail sends a notification to a designated Pub/Sub topic.
+3.  **Cloud Run Trigger**: A Pub/Sub subscription triggers the Cloud Run service, which hosts the Flask application (`main.py`).
+4.  **Email Processing**: The application receives the notification, fetches the new email content using the Gmail API, and performs several security checks (e.g., sender validation, spam filtering, age of email).
+5.  **AI Response Generation**: If the email passes the checks, its content is sent to Vertex AI's Gemini model (`generate_ai_genai.py`) to generate a relevant reply.
+6.  **Send Reply**: The generated response is sent back to the original sender via the Gmail API.
+
+## Key Features
+
+-   **AI-Powered Replies**: Uses Vertex AI Gemini for generating human-like email responses.
+-   **Real-time Processing**: Leverages Gmail API push notifications via Pub/Sub for immediate responses.
+-   **Secure & Filtered**: Includes security mechanisms to process only specific emails (e.g., based on recipient address like `+cs`), filter spam, and avoid reply loops.
+-   **Serverless**: Built to run on Google Cloud Run for scalability and cost-efficiency.
+-   **Comprehensive Tooling**: Includes scripts for setup, testing, and deployment.
+
+## Directory Structure
+
+Here's an overview of the key files in this directory:
+
+-   `main.py`: The core Flask application that handles incoming Pub/Sub messages, processes emails, and orchestrates the reply logic.
+-   `generate_ai_genai.py`: Contains the function to interact with the Vertex AI Gemini model for response generation.
+-   `requirements.txt`: Lists all the Python dependencies required for the project.
+-   `deploy.sh`: A shell script to automate the deployment process to Google Cloud Run.
+-   `setup_gmail_watch.py`: A script to configure the Gmail API watch notification on the target email account.
+-   `activate_gmail_watch.py` & `check_gmail_watch.py`: Helper scripts to manage the Gmail watch lifecycle.
+-   `*test*.py`: A suite of test scripts for verifying different components of the system, from simple unit tests to comprehensive integration tests.
+
+## Setup and Deployment
+
+1.  **Prerequisites**: Ensure you have a Google Cloud Project with the Gmail API, Pub/Sub API, Vertex AI API, and Secret Manager API enabled.
+2.  **Permissions**: Run `setup_permissions.py` to configure the necessary IAM roles for the service account.
+3.  **Authentication**: Run `gmail_auth.py` (from the parent `scripts` directory) to generate the necessary OAuth2 credentials and store them in Secret Manager.
+4.  **Gmail Watch**: Execute `setup_gmail_watch.py` to link your Gmail account to the Pub/Sub topic.
+5.  **Deployment**: Run the `deploy.sh` script to build the container image and deploy the service to Google Cloud Run.
+
+## Testing
+
+The system includes various test scripts:
+-   `simple_test.py`: A basic test to check if the deployed service endpoint is responsive.
+-   `comprehensive_test.py`: Simulates a Pub/Sub message to test the entire processing flow.
+-   `test_genai.py`: Specifically tests the AI response generation module.
+
+Run these scripts to ensure all parts of the system are functioning correctly before and after deployment.
 
 A secure, AI-powered Gmail auto-reply system deployed on Google Cloud Run. The system automatically generates and sends personalized responses to emails using Google's Gemini AI model.
 
