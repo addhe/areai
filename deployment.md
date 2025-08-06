@@ -85,8 +85,23 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
 * Jalankan script Python untuk generate `token.json` via flow OAuth:
 
 ```bash
-python scripts/gmail_auth.py
+python scripts/gmail_auth.py --project-id=PROJECT_ID --topic=new-email --save-to-secret-manager
 ```
+
+### **5.3 OAuth Troubleshooting**
+
+Jika mengalami masalah dengan redirect URI:
+
+1. Pastikan OAuth client dikonfigurasi dengan redirect URI yang benar:
+   - Buka [Google Cloud Console → API & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+   - Edit OAuth client ID
+   - Tambahkan redirect URI: `http://localhost:4443/`
+
+2. Jika port 8080 atau port lain sudah digunakan, script akan mendeteksi dan memberikan pesan error. Gunakan port alternatif (seperti 4443) dan pastikan redirect URI dikonfigurasi dengan benar.
+
+3. Setelah autentikasi berhasil, token akan disimpan di:
+   - File lokal: `token.json`
+   - Google Secret Manager: `gmail-oauth-token`
 
 ---
 
@@ -98,7 +113,21 @@ python scripts/gmail_auth.py
 gcloud pubsub topics create new-email
 ```
 
-### **6.2 Create Subscription**
+### **6.2 Test Gmail API Integration**
+
+Untuk memastikan integrasi Gmail API dan Pub/Sub berfungsi dengan baik:
+
+```bash
+python scripts/test_gmail_integration.py --project-id=PROJECT_ID --topic=new-email --wait-time=90
+```
+
+Script ini akan:
+1. Mengirim email test ke alamat yang ditentukan
+2. Membuat subscription sementara ke topic Pub/Sub
+3. Menunggu notifikasi dari Gmail API watch
+4. Memverifikasi bahwa notifikasi diterima dengan benar
+
+### **6.3 Create Subscription**
 
 ```bash
 gcloud pubsub subscriptions create email-subscriber \
@@ -127,31 +156,57 @@ Respon akan mengembalikan `historyId` awal.
 
 ---
 
-## **8. Deploy Cloud Function**
+## **8. Cloud Run Service**
 
-### **8.1 Code Structure**
+### **8.1 Existing Service**
+
+Service Cloud Run `auto-reply-email` sudah ter-deploy di region `asia-southeast2` dengan URL:
 
 ```
-auto-reply/
-├── main.py
-├── requirements.txt
-├── utils/
-│   └── gmail.py
-│   └── vertex_ai.py
-└── config.json
+https://auto-reply-email-361046956504.asia-southeast2.run.app
 ```
 
-### **8.2 Deploy Command**
+### **8.2 Update Service (jika diperlukan)**
+
+Untuk mengupdate service yang sudah ada:
 
 ```bash
-gcloud functions deploy auto-reply-email \
-  --runtime python311 \
-  --trigger-topic new-email \
-  --entry-point pubsub_trigger \
-  --service-account autoreply-sa@PROJECT_ID.iam.gserviceaccount.com \
-  --region us-central1 \
-  --memory 256MB \
-  --timeout 60s
+gcloud run deploy auto-reply-email \
+  --source . \
+  --region asia-southeast2 \
+  --platform managed \
+  --allow-unauthenticated \
+  --service-account autoreply-sa@awanmasterpiece.iam.gserviceaccount.com \
+  --set-env-vars PROJECT_ID=awanmasterpiece,SECRET_NAME=gmail-oauth-token,VERTEX_MODEL=gemini-1.5-pro
+```
+
+### **8.3 Verify Service**
+
+```bash
+gcloud run services describe auto-reply-email --region asia-southeast2
+```
+
+### **8.4 Configure Pub/Sub Trigger**
+
+Pastikan Pub/Sub topic `new-email` memiliki subscription yang mengarah ke service Cloud Run:
+
+```bash
+gcloud pubsub subscriptions create auto-reply-subscription \
+  --topic new-email \
+  --push-endpoint=https://auto-reply-email-361046956504.asia-southeast2.run.app \
+  --push-auth-service-account=autoreply-sa@awanmasterpiece.iam.gserviceaccount.com
+```
+
+### **8.5 Test Service**
+
+Untuk menguji service:
+1. Kirim email ke alamat yang terhubung dengan Gmail API watch
+2. Tunggu beberapa detik untuk pemrosesan
+3. Periksa inbox untuk melihat auto-reply yang dikirim
+4. Periksa logs untuk memastikan service berjalan dengan benar:
+
+```bash
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=auto-reply-email" --limit=50
 ```
 
 ---

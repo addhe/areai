@@ -84,9 +84,54 @@ def authenticate_gmail(credentials_file, token_file):
             print("https://console.cloud.google.com/apis/credentials")
             raise FileNotFoundError(f"Credentials file not found: {credentials_file}")
         
+        print("\n==== IMPORTANT: OAUTH CONFIGURATION CHECK ====\n")
+        print("Your OAuth client should be configured with the following redirect URI:")
+        print("   - http://localhost:4443/")
+        print("\nPlease verify this is configured in your Google Cloud Console:")
+        print("1. Go to: https://console.cloud.google.com/apis/credentials")
+        print("2. Find and edit your OAuth client ID")
+        print("3. Make sure the above redirect URI is listed")
+        print("4. Save any changes if needed\n")
+        
+        proceed = input("Is your OAuth client configured with http://localhost:4443/ as a redirect URI? (yes/no): ")
+        if proceed.lower() != 'yes':
+            print("Please update your OAuth configuration and run this script again.")
+            sys.exit(0)
+        
         try:
+            # Check if port 8080 is already in use
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            port_available = True
+            try:
+                sock.bind(('localhost', 4443))
+            except socket.error:
+                port_available = False
+            finally:
+                sock.close()
+            
+            if not port_available:
+                print("\nWARNING: Port 4443 is already in use!")
+                print("Please free up port 4443 by stopping any services using it and try again.")
+                print("You can find what's using port 4443 with: lsof -i :4443")
+                print("And stop the process with: kill <PID>")
+                sys.exit(1)
+            
+            # Use the local server flow
+            print("\nStarting authentication with local server...")
             flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
-            creds = flow.run_local_server(port=8080)
+            creds = flow.run_local_server(port=4443)
+            print("Authentication successful!")
+            
+            # Ensure we have offline access (refresh token)
+            if not creds.refresh_token:
+                print("\nWARNING: No refresh token obtained. This may cause issues with long-term access.")
+                print("This typically happens if you've already authorized this application.")
+                print("To fix this, revoke access in your Google Account and try again:")
+                print("https://myaccount.google.com/permissions")
+                proceed = input("\nDo you want to continue anyway? (yes/no): ")
+                if proceed.lower() != 'yes':
+                    sys.exit(0)
             
             # Save the credentials for the next run
             token_dir = os.path.dirname(token_file)
@@ -95,9 +140,10 @@ def authenticate_gmail(credentials_file, token_file):
                 
             with open(token_file, 'w') as token:
                 token.write(creds.to_json())
-                print(f"Token saved to {token_file}")
+                print(f"\nToken saved to {token_file}")
+                
         except Exception as e:
-            print(f"Error during authentication: {e}")
+            print(f"\nError during authentication: {e}")
             raise
     
     return creds

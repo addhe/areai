@@ -1,0 +1,13 @@
+google-api-python-client==2.97.0
+google-auth==2.22.0
+google-auth-httplib2==0.1.0
+google-cloud-pubsub==2.18.4
+google-cloud-secret-manager==2.16.3
+google-cloud-aiplatform>=1.36.0
+vertexai>=1.36.0
+google-genai>=1.28.0
+flask==2.3.3
+werkzeug==2.3.7
+gunicorn==21.2.0
+setuptools>=65.5.1
+click>=8.1.7

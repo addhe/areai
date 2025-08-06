@@ -63,7 +63,8 @@ def get_config() -> Dict[str, Any]:
         },
         "email": {
             "max_retries": MAX_RETRY_COUNT,
-            "timeout": REPLY_TIMEOUT_SECONDS
+            "timeout": REPLY_TIMEOUT_SECONDS,
+            "destination": DESTINATION_EMAIL
         },
         "logging": {
             "level": LOG_LEVEL

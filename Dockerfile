@@ -16,6 +16,10 @@ ENV PYTHONUNBUFFERED=1
 ARG CUSTOMER_API_ENDPOINT
 ENV CUSTOMER_API_ENDPOINT=${CUSTOMER_API_ENDPOINT:-"https://nasabah-api-endpoint.example.com"}
 
+# Email configuration
+ARG DESTINATION_EMAIL
+ENV DESTINATION_EMAIL=${DESTINATION_EMAIL:-"addhe.warman+cs@gmail.com"}
+
 # Expose port untuk Cloud Run
 EXPOSE 8080
 

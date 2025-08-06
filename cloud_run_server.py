@@ -68,8 +68,27 @@ def handle_request():
 
         # Process the email
         logger.info(f"Processing message: {pubsub_message}")
+        
+        # Extract recipient from the message if available
+        recipient = None
+        try:
+            if isinstance(pubsub_message.get("data"), str):
+                data = json.loads(pubsub_message["data"])
+                recipient = data.get("to")
+                
+                # Check if the email is intended for our specific address
+                from config import get_config
+                DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL", "addhe.warman+cs@gmail.com")
+                
+                if recipient and recipient != DESTINATION_EMAIL:
+                    logger.warning(f"Ignoring email to {recipient} (expected {DESTINATION_EMAIL})")
+                    return jsonify({"success": False, "message": "Email not intended for this service"}), 200
+        except Exception as e:
+            logger.warning(f"Could not extract recipient from message: {e}")
+            
         result = process_email(pubsub_message)
         logger.info(f"Processing result: {result}")
+        
         
         return jsonify({
             "success": True, 

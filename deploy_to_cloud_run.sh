@@ -74,14 +74,26 @@ else
     echo "Service account pubsub-cloud-run-invoker sudah ada."
 fi
 
-# 4. Build dan push container image
-echo -e "\n${GREEN}4. Building container image...${NC}"
-gcloud builds submit --tag gcr.io/$PROJECT_ID/auto-reply-email .
+# 4. Create Artifact Registry repository if it doesn't exist
+echo -e "\n${GREEN}4. Setting up Artifact Registry...${NC}"
+if ! gcloud artifacts repositories describe auto-reply-repo --location=asia-southeast2 &> /dev/null; then
+    echo "Creating Artifact Registry repository..."
+    gcloud artifacts repositories create auto-reply-repo \
+        --repository-format=docker \
+        --location=asia-southeast2 \
+        --description="Repository for Auto Reply Email images"
+else
+    echo "Artifact Registry repository already exists."
+fi
 
-# 5. Deploy ke Cloud Run
-echo -e "\n${GREEN}5. Deploying ke Cloud Run...${NC}"
+# 5. Build dan push container image
+echo -e "\n${GREEN}5. Building container image...${NC}"
+gcloud builds submit --tag asia-southeast2-docker.pkg.dev/$PROJECT_ID/auto-reply-repo/auto-reply-email:latest .
+
+# 6. Deploy ke Cloud Run
+echo -e "\n${GREEN}6. Deploying ke Cloud Run...${NC}"
 gcloud run deploy auto-reply-email \
-  --image gcr.io/$PROJECT_ID/auto-reply-email \
+  --image asia-southeast2-docker.pkg.dev/$PROJECT_ID/auto-reply-repo/auto-reply-email:latest \
   --platform managed \
   --region asia-southeast2 \
   --memory 512Mi \
@@ -89,7 +101,7 @@ gcloud run deploy auto-reply-email \
   --concurrency 80 \
   --timeout 300s \
   --service-account autoreply-sa@$PROJECT_ID.iam.gserviceaccount.com \
-  --set-env-vars="CUSTOMER_API_ENDPOINT=${CUSTOMER_API_ENDPOINT:-https://nasabah-api-endpoint.example.com},CUSTOMER_API_KEY=${CUSTOMER_API_KEY:-your-api-key}"
+  --set-env-vars="CUSTOMER_API_ENDPOINT=${CUSTOMER_API_ENDPOINT:-https://nasabah-api-endpoint.example.com},CUSTOMER_API_KEY=${CUSTOMER_API_KEY:-your-api-key},DESTINATION_EMAIL=${DESTINATION_EMAIL:-addhe.warman+cs@gmail.com}"
 
 # 6. Dapatkan URL Cloud Run service
 SERVICE_URL=$(gcloud run services describe auto-reply-email --format="value(status.url)")
