@@ -140,17 +140,6 @@ areai/
 - [x] Test notification flow with sample emails
 - [x] Implement automatic watch renewal
 
----
-
-## **5. Nasabah API Integration**
-
-### **5.1 API Client Implementation**
-- [x] Create nasabah API client in `utils/customer_api.py`
-- [x] Implement customer verification function with GET request to nasabah API
-- [x] Add API key authentication in headers
-- [x] Add error handling and retry logic with exponential backoff
-- [x] Create mock API data for testing and fallback
-
 ### **5.2 Testing Nasabah API**
 - [x] Write unit tests for nasabah API functions
 - [x] Test with sample customer data including premium and standard accounts
@@ -332,15 +321,14 @@ areai/
 
 | Phase | Milestone | Status | Completion Date |
 |-------|-----------|--------|----------------|
-| 1 | Project Setup & GCP Configuration | ✅ Completed | 2025-08-07 |
-| 2 | Gmail API & Pub/Sub Integration | ✅ Completed | 2025-08-09 |
-| 3 | Vertex AI & Customer API Integration | ✅ Completed | 2025-08-11 |
-| 4 | Cloud Function Implementation | ✅ Completed | 2025-08-13 |
-| 5 | Infrastructure & CI/CD Setup | ✅ Completed | 2025-08-15 |
-| 6 | Testing & Deployment | ✅ Completed | 2025-08-18 |
-| 7 | Monitoring & Documentation | ✅ Completed | 2025-08-19 |
-| 8 | Final Deployment & Handover | ✅ Completed | 2025-08-20 |
-
+| 1 | Project Setup & GCP Configuration | ✅ Completed | 2025-08-03 |
+| 2 | Gmail API & Pub/Sub Integration | ✅ Completed | 2025-08-04 |
+| 3 | Vertex AI & Customer API Integration | ✅ Completed | 2025-08-05 |
+| 4 | Cloud Function Implementation | ✅ Completed | 2025-08-05 |
+| 5 | Infrastructure & CI/CD Setup | ✅ Completed | 2025-08-05 |
+| 6 | Testing & Deployment | ✅ Completed | 2025-08-05 |
+| 7 | Monitoring & Documentation | ✅ Completed | 2025-08-05 |
+| 8 | Final Deployment & Handover | ✅ Completed | 2025-08-05 |
 ---
 
 ## **14. Risk Management**

@@ -81,10 +81,19 @@ def process_email(email_address: str, history_id: str) -> bool:
         subject = email_data.get("subject", "")
         body = email_data.get("body", "")
         sender = email_data.get("from", "")
+        recipient = email_data.get("to", "")
+        
+        # Validate destination email (anti-spam measure)
+        from config import get_config
+        DESTINATION_EMAIL = get_config()["email"]["destination"]
+        if recipient != DESTINATION_EMAIL:
+            logger.warning(f"Ignoring email to {recipient} (expected {DESTINATION_EMAIL})")
+            return False
         
         logger.info({
             "message": "Processing email",
             "sender": sender,
+            "recipient": recipient,
             "subject": subject,
             "history_id": history_id
         })
@@ -108,6 +117,7 @@ def process_email(email_address: str, history_id: str) -> bool:
             "message": "Email reply sent",
             "success": success,
             "sender": sender,
+            "recipient": recipient,
             "history_id": history_id
         })
         
@@ -118,7 +128,8 @@ def process_email(email_address: str, history_id: str) -> bool:
             "message": "Failed to process email",
             "error": str(e),
             "email_address": email_address,
-            "history_id": history_id
+            "history_id": history_id,
+            "recipient": recipient if 'recipient' in locals() else "unknown"
         })
         return False
 

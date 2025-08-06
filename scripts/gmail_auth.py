@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import sys
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -85,7 +86,7 @@ def authenticate_gmail(credentials_file, token_file):
         
         try:
             flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_local_server(port=8080)
             
             # Save the credentials for the next run
             token_dir = os.path.dirname(token_file)
@@ -219,8 +220,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Gmail API OAuth authentication for Auto Reply Email system")
     parser.add_argument(
         "--project-id", 
-        required=True,
-        help="GCP project ID"
+        default=os.getenv('GCP_PROJECT_ID'),
+        help="GCP project ID (default: from .env)"
     )
     parser.add_argument(
         "--credentials-file", 
@@ -272,6 +273,9 @@ def main():
     """Main function."""
     print("Gmail API OAuth Authentication")
     print("=============================")
+    
+    # Load environment variables from .env
+    load_dotenv()
     
     # Parse command line arguments
     args = parse_arguments()

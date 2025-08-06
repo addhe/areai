@@ -9,6 +9,7 @@ google-cloud-secret-manager==2.16.4
 google-cloud-logging==3.8.0
 google-auth==2.23.0
 google-api-python-client==2.108.0
+google-auth-oauthlib==1.0.0  # Required for gmail_auth.py
 
 # Utilitas
 requests==2.31.0

@@ -27,6 +27,7 @@ DEFAULT_TONE = "formal"
 # Email settings
 MAX_RETRY_COUNT = 3
 REPLY_TIMEOUT_SECONDS = 15
+DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL", "addhe.warman+cs@gmail.com")
 
 # Logging settings
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
