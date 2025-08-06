@@ -263,7 +263,13 @@ def add_auto_reply_label(service, msg_id):
         return False
 
 def check_is_nasabah(email):
-    """Check if the sender is a known customer via API."""
+    """Check if the sender is a known customer via API.
+    
+    Returns:
+        tuple: (is_nasabah, customer_data)
+            - is_nasabah (bool): True if email belongs to a customer, False otherwise
+            - customer_data (dict): Customer data if available, None otherwise
+    """
     logger.info(f"Checking customer status for: {email}")
     try:
         headers = {
@@ -290,36 +296,42 @@ def check_is_nasabah(email):
                     is_nasabah = response_data['is_nasabah']
                     if is_nasabah:
                         logger.info(f"Customer confirmed for email: {email}")
-                        return True
+                        return True, response_data
                     else:
                         logger.info(f"API explicitly confirmed non-customer status for email: {email}")
-                        return False
+                        return False, None
                 # Jika tidak ada indikator spesifik, anggap sukses = nasabah ditemukan
                 else:
                     logger.info(f"Customer found for email: {email} (implied from successful response)")
-                    return True
+                    return True, response_data
             else:
                 logger.warning(f"API returned 200 but with unexpected data format for email: {email}")
                 # Default ke False jika format data tidak sesuai harapan
-                return False
+                return False, None
                 
         # Status 404 berarti nasabah tidak ditemukan
         elif response.status_code == 404:
             logger.info(f"Customer not found for email: {email}")
-            return False
+            return False, None
             
         # Status lain dianggap error
         else:
             logger.error(f"Error checking customer status: API returned status {response.status_code} - {response.text}")
             # Default ke False untuk error
-            return False
+            return False, None
 
     except Exception as e:
         logger.error(f"Error calling Nasabah API: {e}")
-        return False # Default to not being a customer if API fails
+        return False, None # Default to not being a customer if API fails
 
-def generate_ai_response(email_data, is_nasabah):
-    """Generate an AI response using GenAI SDK with Vertex AI backend."""
+def generate_ai_response(email_data, is_nasabah, customer_data=None):
+    """Generate an AI response using GenAI SDK with Vertex AI backend.
+    
+    Args:
+        email_data (dict): Email data including from, subject, body
+        is_nasabah (bool): Whether the sender is a verified customer
+        customer_data (dict, optional): Customer data from API including saldo info
+    """
     try:
         logger.info("Initializing GenAI client with Vertex AI backend")
         
@@ -329,6 +341,14 @@ def generate_ai_response(email_data, is_nasabah):
             project=PROJECT_ID,
             location="us-central1",
         )
+        
+        # Ekstrak informasi saldo jika tersedia
+        saldo_info = ""
+        if is_nasabah and customer_data and isinstance(customer_data, dict):
+            if 'saldo' in customer_data:
+                saldo_info = f"\n- Saldo Anda: Rp {customer_data['saldo']}"
+            elif 'balance' in customer_data:
+                saldo_info = f"\n- Saldo Anda: Rp {customer_data['balance']}"
         
         # Buat prompt dalam Bahasa Indonesia
         prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
@@ -344,7 +364,7 @@ Subjek: {email_data['subject']}
 Pesan: {email_data['body']}
 
 Konteks Tambahan:
-- Status Pengirim: {'Nasabah Terverifikasi' if is_nasabah else 'Bukan Nasabah'}
+- Status Pengirim: {'Nasabah Terverifikasi' if is_nasabah else 'Bukan Nasabah'}{saldo_info}
 
 Balasan Anda harus:
 - Mengakui email mereka
@@ -466,11 +486,11 @@ def process_message(service, msg_id):
         
         # Check if sender is a customer
         sender_email = email_data.get('from', '').split('<')[-1].split('>')[0]
-        is_nasabah = check_is_nasabah(sender_email)
+        is_nasabah, customer_data = check_is_nasabah(sender_email)
 
         # Generate AI response with customer context
         logger.info("Generating AI response for email")
-        response_text = generate_ai_response(email_data, is_nasabah)
+        response_text = generate_ai_response(email_data, is_nasabah, customer_data)
         
         # Send reply
         logger.info("Sending auto-reply email")

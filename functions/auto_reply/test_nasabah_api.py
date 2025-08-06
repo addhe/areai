@@ -24,15 +24,17 @@ class TestNasabahAPI(unittest.TestCase):
         # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.text = json.dumps({'is_nasabah': True, 'customer_id': '12345'})
-        mock_response.json.return_value = {'is_nasabah': True, 'customer_id': '12345'}
+        mock_response.text = json.dumps({'is_nasabah': True, 'customer_id': '12345', 'saldo': '15000000'})
+        mock_response.json.return_value = {'is_nasabah': True, 'customer_id': '12345', 'saldo': '15000000'}
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertTrue(result)
+        self.assertTrue(is_nasabah)
+        self.assertIsNotNone(customer_data)
+        self.assertEqual(customer_data['saldo'], '15000000')
     
     @patch('requests.get')
     def test_successful_response_without_explicit_status(self, mock_get):
@@ -40,15 +42,17 @@ class TestNasabahAPI(unittest.TestCase):
         # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.text = json.dumps({'customer_id': '12345'})
-        mock_response.json.return_value = {'customer_id': '12345'}
+        mock_response.text = json.dumps({'customer_id': '12345', 'balance': '15000000'})
+        mock_response.json.return_value = {'customer_id': '12345', 'balance': '15000000'}
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertTrue(result)
+        self.assertTrue(is_nasabah)
+        self.assertIsNotNone(customer_data)
+        self.assertEqual(customer_data['balance'], '15000000')
     
     @patch('requests.get')
     def test_successful_response_with_explicit_non_customer(self, mock_get):
@@ -61,10 +65,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
     
     @patch('requests.get')
     def test_not_found_response(self, mock_get):
@@ -76,10 +81,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
     
     @patch('requests.get')
     def test_error_response(self, mock_get):
@@ -91,10 +97,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
     
     @patch('requests.get')
     def test_malformed_json_response(self, mock_get):
@@ -107,10 +114,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
     
     @patch('requests.get')
     def test_empty_response(self, mock_get):
@@ -122,10 +130,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
     
     @patch('requests.get')
     def test_connection_error(self, mock_get):
@@ -134,10 +143,11 @@ class TestNasabahAPI(unittest.TestCase):
         mock_get.side_effect = Exception("Connection error")
         
         # Call the function
-        result = check_is_nasabah('test@example.com')
+        is_nasabah, customer_data = check_is_nasabah('test@example.com')
         
         # Assert
-        self.assertFalse(result)
+        self.assertFalse(is_nasabah)
+        self.assertIsNone(customer_data)
 
 if __name__ == "__main__":
     unittest.main()
