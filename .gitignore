@@ -56,3 +56,6 @@ client_secret*.json
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+# Konfigurasi lokal, jangan di-commit
+functions/auto_reply/config.py
