@@ -69,18 +69,60 @@ def is_email_allowed(email_data):
             logger.info(f"Email not sent to allowed address. To: {to_address}, Expected: {ALLOWED_EMAIL_ADDRESS}")
             return False, "Email not sent to allowed address"
         
+        # Check if the email is from our own system (prevent reply loops)
+        from_address = email_data.get('from', '').lower()
+        if ALLOWED_EMAIL_ADDRESS.lower() in from_address:
+            logger.info(f"Preventing reply loop: Email is from our own system {from_address}")
+            return False, "Email is from our own system"
+        
+        # Check for auto-reply headers or indicators in subject/body
+        subject = email_data.get('subject', '').lower()
+        body = email_data.get('body', '').lower()
+        
+        # Check for auto-reply headers
+        auto_submitted = email_data.get('auto_submitted', '').lower()
+        x_auto_response_suppress = email_data.get('x_auto_response_suppress', '').lower()
+        precedence = email_data.get('precedence', '').lower()
+        x_autoreply = email_data.get('x_autoreply', '').lower()
+        x_autorespond = email_data.get('x_autorespond', '').lower()
+        
+        # Check for standard auto-reply headers
+        if auto_submitted and auto_submitted != 'no':
+            logger.info(f"Email has auto-submitted header: {auto_submitted}")
+            return False, "Email is an automatic reply (auto-submitted header)"
+            
+        if x_auto_response_suppress:
+            logger.info(f"Email has x-auto-response-suppress header: {x_auto_response_suppress}")
+            return False, "Email is an automatic reply (x-auto-response-suppress header)"
+            
+        if precedence in ['bulk', 'auto_reply', 'junk']:
+            logger.info(f"Email has precedence header indicating auto-reply: {precedence}")
+            return False, "Email is an automatic reply (precedence header)"
+            
+        if x_autoreply or x_autorespond:
+            logger.info("Email has explicit auto-reply header")
+            return False, "Email is an automatic reply (explicit header)"
+        
+        # Common auto-reply indicators in subject/body
+        auto_reply_indicators = [
+            'auto-reply', 'automatic reply', 'auto reply', 'out of office', 
+            'automated response', 'do not reply', 'noreply', 'no-reply',
+            'mailer-daemon', 'mail delivery', 'delivery status', 'delivery failure',
+            'undeliverable', 'returned mail'
+        ]
+        
+        if any(indicator in subject.lower() or indicator in body.lower() for indicator in auto_reply_indicators):
+            logger.info("Email appears to be an automatic reply based on content")
+            return False, "Email is an automatic reply (content indicators)"
+        
         # Check sender domain if whitelist is configured
         if ALLOWED_SENDERS:
-            from_address = email_data.get('from', '')
             sender_domain = from_address.split('@')[-1].lower() if '@' in from_address else ''
             if not any(domain.lower() in sender_domain for domain in ALLOWED_SENDERS):
                 logger.info(f"Sender domain not in whitelist: {sender_domain}")
                 return False, "Sender domain not allowed"
         
         # Check for spam indicators
-        subject = email_data.get('subject', '').lower()
-        body = email_data.get('body', '').lower()
-        
         spam_keywords = ['viagra', 'casino', 'lottery', 'winner', 'urgent', 'click here', 'free money']
         if any(keyword in subject or keyword in body for keyword in spam_keywords):
             logger.info("Email contains spam keywords")
@@ -171,6 +213,17 @@ def extract_email_data(message):
             data['to'] = header['value']
         elif name == 'reply-to':
             data['reply_to'] = header['value']
+        # Capture headers that indicate auto-generated emails
+        elif name == 'auto-submitted':
+            data['auto_submitted'] = header['value']
+        elif name == 'x-auto-response-suppress':
+            data['x_auto_response_suppress'] = header['value']
+        elif name == 'precedence':
+            data['precedence'] = header['value']
+        elif name == 'x-autoreply':
+            data['x_autoreply'] = header['value']
+        elif name == 'x-autorespond':
+            data['x_autorespond'] = header['value']
     
     # If no reply-to, use from
     if not data['reply_to']:
@@ -438,6 +491,12 @@ def send_reply(service, email_data, response_text):
         message['subject'] = f"Re: {email_data['subject']}"
         message['In-Reply-To'] = email_data['id']
         message['References'] = email_data['id']
+        
+        # Add auto-reply headers to prevent reply loops
+        message['Auto-Submitted'] = 'auto-replied'
+        message['X-Auto-Response-Suppress'] = 'All'
+        message['Precedence'] = 'auto_reply'
+        message['X-AutoReply'] = 'yes'
         
         # Add body
         message.attach(MIMEText(response_text))
