@@ -273,17 +273,48 @@ def check_is_nasabah(email):
         params = {'email': email}
         response = requests.get(config.NASABAH_API_URL, headers=headers, params=params, timeout=5)
 
+        # Coba parse respons JSON jika ada
+        response_data = None
+        try:
+            if response.text and response.text.strip():
+                response_data = response.json()
+        except ValueError as e:
+            logger.error(f"Error parsing JSON response: {e} - Raw response: {response.text}")
+
+        # Status 200 dengan data yang valid
         if response.status_code == 200:
-            logger.info(f"Customer found for email: {email}")
-            return True
+            # Periksa apakah respons memiliki data yang diharapkan
+            if response_data and isinstance(response_data, dict):
+                # Jika API mengembalikan indikator status nasabah spesifik
+                if 'is_nasabah' in response_data:
+                    is_nasabah = response_data['is_nasabah']
+                    if is_nasabah:
+                        logger.info(f"Customer confirmed for email: {email}")
+                        return True
+                    else:
+                        logger.info(f"API explicitly confirmed non-customer status for email: {email}")
+                        return False
+                # Jika tidak ada indikator spesifik, anggap sukses = nasabah ditemukan
+                else:
+                    logger.info(f"Customer found for email: {email} (implied from successful response)")
+                    return True
+            else:
+                logger.warning(f"API returned 200 but with unexpected data format for email: {email}")
+                # Default ke False jika format data tidak sesuai harapan
+                return False
+                
+        # Status 404 berarti nasabah tidak ditemukan
         elif response.status_code == 404:
             logger.info(f"Customer not found for email: {email}")
             return False
+            
+        # Status lain dianggap error
         else:
             logger.error(f"Error checking customer status: API returned status {response.status_code} - {response.text}")
+            # Default ke False untuk error
             return False
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Error calling Nasabah API: {e}")
         return False # Default to not being a customer if API fails
 
