@@ -1,34 +1,34 @@
-# AI-Powered Email Auto-Reply System
+# Sistem Balas Email Otomatis Berbasis AI
 
-This repository contains the source code for an intelligent email auto-reply system built on Google Cloud Platform. It uses Vertex AI's Gemini model to generate context-aware replies to incoming emails, providing a fully automated and smart communication assistant.
+Repositori ini berisi kode sumber untuk sistem balas email otomatis cerdas yang dibangun di atas Google Cloud Platform. Sistem ini menggunakan model Gemini dari Vertex AI untuk menghasilkan balasan yang sesuai dengan konteks email yang masuk, menyediakan asisten komunikasi yang sepenuhnya otomatis dan cerdas.
 
-## Overview
+## Gambaran Umum
 
-The core of this project is a serverless function (`functions/auto_reply`) that is triggered by new emails via Gmail API and Pub/Sub. It includes robust security features, comprehensive testing, and automated deployment scripts.
+Inti dari proyek ini adalah fungsi nirserver (`functions/auto_reply`) yang dipicu oleh email baru melalui Gmail API dan Pub/Sub. Proyek ini mencakup fitur keamanan yang kuat, pengujian komprehensif, dan skrip deployment otomatis.
 
-## Key Documentation
+## Dokumentasi Utama
 
-For detailed information, please refer to the following documents:
+Untuk informasi lebih detail, silakan merujuk ke dokumen-dokumen berikut:
 
--   **[Architecture Overview](docs/architecture.md)**: A high-level look at the system design and components.
--   **[Deployment Guide](docs/deployment_guide.md)**: Step-by-step instructions for deploying the application to Google Cloud Run.
--   **[Auto-Reply Function README](functions/auto_reply/README.md)**: Detailed documentation for the core auto-reply service, including its specific setup and testing procedures.
+-   **[Gambaran Arsitektur](docs/architecture.md)**: Tinjauan tingkat tinggi tentang desain sistem dan komponennya.
+-   **[Panduan Deployment](docs/deployment_guide.md)**: Instruksi langkah demi langkah untuk men-deploy aplikasi ke Google Cloud Run.
+-   **[README Fungsi Balas Otomatis](functions/auto_reply/README.md)**: Dokumentasi terperinci untuk layanan inti balas otomatis, termasuk prosedur penyiapan dan pengujian spesifiknya.
 
-## Getting Started
+## Memulai
 
-1.  **Clone the repository**:
+1.  **Clone repositori**:
     ```bash
     git clone <repository-url>
     ```
-2.  **Navigate to the function directory**:
+2.  **Arahkan ke direktori fungsi**:
     ```bash
     cd functions/auto_reply
     ```
-3.  **Follow the setup instructions** in the `functions/auto_reply/README.md` file to configure authentication, permissions, and deploy the service.
+3.  **Ikuti instruksi penyiapan** di dalam file `functions/auto_reply/README.md` untuk mengonfigurasi autentikasi, izin, dan men-deploy layanan.
 
-## Contributing
+## Berkontribusi
 
-Please read our [coding style guide](coding_style.md) for details on our code standards and contribution process.
+Silakan baca [panduan gaya penulisan kode](coding_style.md) kami untuk detail tentang standar kode dan proses kontribusi.
 
 ![Google Cloud Platform](https://img.shields.io/badge/GCP-Cloud_Functions-4285F4?logo=google-cloud)
 ![Vertex AI](https://img.shields.io/badge/Vertex_AI-Gemini-0F9D58?logo=google-cloud)
