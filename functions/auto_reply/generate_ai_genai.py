@@ -8,32 +8,34 @@ from google import genai
 from google.genai import types
 
 def generate_ai_response_genai(email_data):
-    """Generate an AI response using Google GenAI SDK."""
+    """Menghasilkan respons AI menggunakan Google GenAI SDK."""
     try:
-        print("Initializing Google GenAI client")
+        print("Menginisialisasi klien Google GenAI")
         
-        # Get API key from environment or Secret Manager
+        # Dapatkan kunci API dari environment atau Secret Manager
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            print("No GEMINI_API_KEY found, falling back to Vertex AI")
+            print("Kunci GEMINI_API_KEY tidak ditemukan, kembali ke Vertex AI")
             return None
         
         client = genai.Client(api_key=api_key)
         
-        # Create prompt
-        prompt = f"""You are a helpful AI email assistant. Generate a polite and professional response to this email:
+        # Buat prompt dalam Bahasa Indonesia
+        prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
 
-From: {email_data['from']}
-Subject: {email_data['subject']}
-Message: {email_data['body']}
+PENTING: Balas dalam Bahasa Indonesia.
 
-Your response should:
-- Acknowledge their email
-- Be helpful and professional
-- Be concise (2-3 sentences)
-- End politely
+Dari: {email_data['from']}
+Subjek: {email_data['subject']}
+Pesan: {email_data['body']}
 
-Response:"""
+Balasan Anda harus:
+- Mengakui email mereka
+- Membantu dan profesional
+- Ringkas (2-3 kalimat)
+- Diakhiri dengan sopan
+
+Balasan:"""
         
         contents = [
             types.Content(
@@ -50,7 +52,7 @@ Response:"""
             ),
         )
         
-        print("Generating AI response with GenAI SDK...")
+        print("Membuat respons AI dengan GenAI SDK...")
         response_text = ""
         
         for chunk in client.models.generate_content_stream(
@@ -61,11 +63,11 @@ Response:"""
             response_text += chunk.text
         
         response_text = response_text.strip()
-        print(f"Successfully generated AI response: {response_text[:100]}...")
+        print(f"Berhasil membuat respons AI: {response_text[:100]}...")
         return response_text
         
     except Exception as e:
-        print(f"Error generating AI response with GenAI SDK: {e}")
+        print(f"Gagal membuat respons AI dengan GenAI SDK: {e}")
         return None
 
 if __name__ == "__main__":

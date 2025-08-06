@@ -272,20 +272,22 @@ def generate_ai_response(email_data):
             location="us-central1",
         )
         
-        # Create prompt
-        prompt = f"""You are a helpful AI email assistant. Generate a polite and professional response to this email:
+        # Buat prompt dalam Bahasa Indonesia
+        prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
 
-From: {email_data['from']}
-Subject: {email_data['subject']}
-Message: {email_data['body']}
+PENTING: Balas dalam Bahasa Indonesia.
 
-Your response should:
-- Acknowledge their email
-- Be helpful and professional
-- Be concise (2-3 sentences)
-- End politely
+Dari: {email_data['from']}
+Subjek: {email_data['subject']}
+Pesan: {email_data['body']}
 
-Response:"""
+Balasan Anda harus:
+- Mengakui email mereka
+- Membantu dan profesional
+- Ringkas (2-3 kalimat)
+- Diakhiri dengan sopan
+
+Balasan:"""
         
         logger.info(f"Using model: {VERTEX_MODEL}")
         
