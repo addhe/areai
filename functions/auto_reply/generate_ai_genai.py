@@ -23,7 +23,11 @@ def generate_ai_response_genai(email_data):
         # Buat prompt dalam Bahasa Indonesia
         prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
 
-PENTING: Balas dalam Bahasa Indonesia.
+PENTING:
+- Balas dalam Bahasa Indonesia.
+- JANGAN menambahkan frasa pengantar seperti "Tentu, ini balasannya:" atau sejenisnya.
+- Langsung mulai dengan "Kepada [nama]" atau sapaan yang sesuai.
+- Jika ada pertanyaan tentang saldo, berikan informasi saldo yang sebenarnya, bukan placeholder "[Jumlah Saldo Anda]".
 
 Dari: {email_data['from']}
 Subjek: {email_data['subject']}
