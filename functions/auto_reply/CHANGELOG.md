@@ -1,53 +1,53 @@
-# Changelog
+# Catatan Perubahan
 
-All notable changes to this project will be documented in this file.
+Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
 ## [1.0.0] - 2025-08-06
 
-### Added
--   Initial setup of the Gmail Auto-Reply system as a Flask application.
--   Integration with Google Cloud Run for serverless deployment (`deploy.sh`).
--   Core logic in `main.py` to handle Pub/Sub notifications from Gmail API.
--   AI-powered response generation using Vertex AI Gemini (`generate_ai_genai.py`).
--   Comprehensive security filters to prevent spam and reply loops.
--   A full suite of testing scripts (`simple_test.py`, `comprehensive_test.py`, `test_genai.py`) to ensure reliability.
--   Scripts for automating setup, including permissions (`setup_permissions.py`) and Gmail watch configuration (`setup_gmail_watch.py`).
--   OAuth2 authentication flow (`scripts/gmail_auth.py`) to securely handle user credentials with Google Secret Manager.
+### Penambahan
+-   Pengaturan awal sistem Balas Otomatis Gmail sebagai aplikasi Flask.
+-   Integrasi dengan Google Cloud Run untuk deployment serverless (`deploy.sh`).
+-   Logika inti di `main.py` untuk menangani notifikasi Pub/Sub dari Gmail API.
+-   Pembuatan respons berbasis AI menggunakan Vertex AI Gemini (`generate_ai_genai.py`).
+-   Filter keamanan komprehensif untuk mencegah spam dan loop balasan.
+-   Serangkaian skrip pengujian lengkap (`simple_test.py`, `comprehensive_test.py`, `test_genai.py`) untuk memastikan keandalan.
+-   Skrip untuk mengotomatiskan penyiapan, termasuk izin (`setup_permissions.py`) dan konfigurasi Gmail watch (`setup_gmail_watch.py`).
+-   Alur autentikasi OAuth2 (`scripts/gmail_auth.py`) untuk menangani kredensial pengguna secara aman dengan Google Secret Manager.
 
-### Changed
--   Refactored codebase for better modularity and readability.
--   Switched from basic AI models to Gemini for higher quality responses.
+### Perubahan
+-   Refactor basis kode untuk modularitas dan keterbacaan yang lebih baik.
+-   Beralih dari model AI dasar ke Gemini untuk respons berkualitas lebih tinggi.
 
-### Fixed
--   Resolved various linting errors and improved code quality.
--   Addressed initial authentication issues with Gmail API (`redirect_uri_mismatch`).
+### Perbaikan
+-   Menyelesaikan berbagai kesalahan linting dan meningkatkan kualitas kode.
+-   Mengatasi masalah autentikasi awal dengan Gmail API (`redirect_uri_mismatch`).
 
-All notable changes to the Gmail API Auto-Reply System are documented in this file.
+Semua perubahan penting pada Sistem Balas Otomatis Email Gmail didokumentasikan dalam file ini.
 
 ## [2.0.0] - 2025-08-06
 
-### 🚀 Major Features Added
-- **GenAI SDK Integration**: Migrated from direct Vertex AI calls to Google GenAI SDK with Vertex AI backend
-- **Enhanced Security Filtering**: Added comprehensive email filtering system
-- **Real-time Processing**: Implemented Gmail watch API with Pub/Sub push notifications
-- **Comprehensive Logging**: Added detailed logging throughout the system
+### 🚀 Penambahan Fitur Utama
+- **Integrasi GenAI SDK**: Migrasi dari panggilan Vertex AI langsung ke Google GenAI SDK dengan backend Vertex AI
+- **Penyaringan Keamanan yang Ditingkatkan**: Menambahkan sistem penyaringan email yang komprehensif
+- **Pemrosesan Real-time**: Menerapkan API Gmail watch dengan notifikasi push Pub/Sub
+- **Logging Komprehensif**: Menambahkan logging terperinci di seluruh sistem
 
-### 🔒 Security Enhancements
-- **Email Address Filtering**: Only responds to emails sent to `addhe.warman+cs@gmail.com`
-- **Time-based Filtering**: Only processes emails from the last 24 hours
-- **Spam Protection**: Built-in spam keyword filtering
-- **Duplicate Prevention**: Adds Gmail labels to prevent multiple replies
-- **Domain Whitelisting**: Optional sender domain validation
+### 🔒 Peningkatan Keamanan
+- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `addhe.warman+cs@gmail.com`
+- **Penyaringan Berbasis Waktu**: Hanya memproses email dari 24 jam terakhir
+- **Perlindungan Spam**: Penyaringan kata kunci spam bawaan
+- **Pencegahan Duplikat**: Menambahkan label Gmail untuk mencegah balasan ganda
+- **Daftar Putih Domain**: Validasi domain pengirim opsional
 
-### 🛠️ Technical Improvements
-- **AI Model Upgrade**: Updated to use `gemini-2.5-flash-lite` model
-- **Error Handling**: Improved error handling with fallback responses
-- **Authentication**: Secure OAuth credential storage in Secret Manager
-- **Cloud Native**: Optimized for Google Cloud Run deployment
+### 🛠️ Peningkatan Teknis
+- **Peningkatan Model AI**: Diperbarui untuk menggunakan model `gemini-2.5-flash-lite`
+- **Penanganan Kesalahan**: Penanganan kesalahan yang ditingkatkan dengan respons fallback
+- **Autentikasi**: Penyimpanan kredensial OAuth yang aman di Secret Manager
+- **Cloud Native**: Dioptimalkan untuk deployment Google Cloud Run
 
-### 📁 New Files Added
-- `setup_gmail_watch.py` - Pub/Sub and Gmail watch setup
-- `setup_permissions.py` - IAM permissions configuration
+### 📁 Penambahan File Baru
+- `setup_gmail_watch.py` - Penyiapan Pub/Sub dan Gmail watch
+- `setup_permissions.py` - Konfigurasi izin IAM
 - `activate_gmail_watch.py` - Gmail watch activation
 - `debug_email.py` - Email debugging utility
 - `test_genai_vertex.py` - GenAI SDK testing

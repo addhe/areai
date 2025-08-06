@@ -1,103 +1,103 @@
-# Gmail API Auto-Reply System with Vertex AI
+# Sistem Balas Otomatis Email dengan Gmail API dan Vertex AI
 
-This directory contains a sophisticated, AI-powered email auto-reply system designed to run on Google Cloud. It leverages the Gmail API, Pub/Sub for real-time notifications, and Vertex AI (specifically the Gemini model) to generate intelligent, context-aware responses to incoming emails.
+Direktori ini berisi sistem balas email otomatis canggih yang didukung AI, dirancang untuk berjalan di Google Cloud. Sistem ini memanfaatkan Gmail API, Pub/Sub untuk notifikasi real-time, dan Vertex AI (khususnya model Gemini) untuk menghasilkan respons yang cerdas dan sesuai konteks terhadap email yang masuk.
 
-## Architecture
+## Arsitektur
 
-The system is designed as a serverless application, intended for deployment on Google Cloud Run. The workflow is as follows:
+Sistem ini dirancang sebagai aplikasi serverless yang ditujukan untuk deployment di Google Cloud Run. Alur kerjanya adalah sebagai berikut:
 
-1.  **Gmail Watch**: The Gmail API is configured to monitor a specific email account for new messages.
-2.  **Pub/Sub Notification**: When a new email arrives, Gmail sends a notification to a designated Pub/Sub topic.
-3.  **Cloud Run Trigger**: A Pub/Sub subscription triggers the Cloud Run service, which hosts the Flask application (`main.py`).
-4.  **Email Processing**: The application receives the notification, fetches the new email content using the Gmail API, and performs several security checks (e.g., sender validation, spam filtering, age of email).
-5.  **AI Response Generation**: If the email passes the checks, its content is sent to Vertex AI's Gemini model (`generate_ai_genai.py`) to generate a relevant reply.
-6.  **Send Reply**: The generated response is sent back to the original sender via the Gmail API.
+1.  **Gmail Watch**: Gmail API dikonfigurasi untuk memantau akun email tertentu untuk pesan baru.
+2.  **Notifikasi Pub/Sub**: Ketika email baru tiba, Gmail mengirimkan notifikasi ke topik Pub/Sub yang telah ditentukan.
+3.  **Pemicu Cloud Run**: Langganan Pub/Sub memicu layanan Cloud Run, yang menjadi host aplikasi Flask (`main.py`).
+4.  **Pemrosesan Email**: Aplikasi menerima notifikasi, mengambil konten email baru menggunakan Gmail API, dan melakukan beberapa pemeriksaan keamanan (misalnya, validasi pengirim, penyaringan spam, usia email).
+5.  **Pembuatan Respons AI**: Jika email lolos pemeriksaan, kontennya dikirim ke model Gemini Vertex AI (`generate_ai_genai.py`) untuk menghasilkan balasan yang relevan.
+6.  **Kirim Balasan**: Respons yang dihasilkan dikirim kembali ke pengirim asli melalui Gmail API.
 
-## Key Features
+## Fitur Utama
 
--   **AI-Powered Replies**: Uses Vertex AI Gemini for generating human-like email responses.
--   **Real-time Processing**: Leverages Gmail API push notifications via Pub/Sub for immediate responses.
--   **Secure & Filtered**: Includes security mechanisms to process only specific emails (e.g., based on recipient address like `+cs`), filter spam, and avoid reply loops.
--   **Serverless**: Built to run on Google Cloud Run for scalability and cost-efficiency.
--   **Comprehensive Tooling**: Includes scripts for setup, testing, and deployment.
+-   **Balasan Berbasis AI**: Menggunakan Vertex AI Gemini untuk menghasilkan respons email yang mirip manusia.
+-   **Pemrosesan Real-time**: Memanfaatkan notifikasi push Gmail API melalui Pub/Sub untuk respons segera.
+-   **Aman & Terfilter**: Termasuk mekanisme keamanan untuk hanya memproses email tertentu (misalnya, berdasarkan alamat penerima seperti `+cs`), menyaring spam, dan menghindari loop balasan.
+-   **Serverless**: Dibuat untuk berjalan di Google Cloud Run untuk skalabilitas dan efisiensi biaya.
+-   **Peralatan Komprehensif**: Termasuk skrip untuk penyiapan, pengujian, dan deployment.
 
-## Directory Structure
+## Struktur Direktori
 
-Here's an overview of the key files in this directory:
+Berikut adalah gambaran umum file-file kunci di direktori ini:
 
--   `main.py`: The core Flask application that handles incoming Pub/Sub messages, processes emails, and orchestrates the reply logic.
--   `generate_ai_genai.py`: Contains the function to interact with the Vertex AI Gemini model for response generation.
--   `requirements.txt`: Lists all the Python dependencies required for the project.
--   `deploy.sh`: A shell script to automate the deployment process to Google Cloud Run.
--   `setup_gmail_watch.py`: A script to configure the Gmail API watch notification on the target email account.
--   `activate_gmail_watch.py` & `check_gmail_watch.py`: Helper scripts to manage the Gmail watch lifecycle.
--   `*test*.py`: A suite of test scripts for verifying different components of the system, from simple unit tests to comprehensive integration tests.
+-   `main.py`: Aplikasi Flask inti yang menangani pesan Pub/Sub yang masuk, memproses email, dan mengatur logika balasan.
+-   `generate_ai_genai.py`: Berisi fungsi untuk berinteraksi dengan model Gemini Vertex AI untuk pembuatan respons.
+-   `requirements.txt`: Mendaftar semua dependensi Python yang diperlukan untuk proyek.
+-   `deploy.sh`: Skrip shell untuk mengotomatiskan proses deployment ke Google Cloud Run.
+-   `setup_gmail_watch.py`: Skrip untuk mengonfigurasi notifikasi Gmail API watch pada akun email target.
+-   `activate_gmail_watch.py` & `check_gmail_watch.py`: Skrip pembantu untuk mengelola siklus hidup Gmail watch.
+-   `*test*.py`: Serangkaian skrip pengujian untuk memverifikasi berbagai komponen sistem, dari pengujian unit sederhana hingga pengujian integrasi komprehensif.
 
-## Setup and Deployment
+## Penyiapan dan Deployment
 
-1.  **Prerequisites**: Ensure you have a Google Cloud Project with the Gmail API, Pub/Sub API, Vertex AI API, and Secret Manager API enabled.
-2.  **Permissions**: Run `setup_permissions.py` to configure the necessary IAM roles for the service account.
-3.  **Authentication**: Run `gmail_auth.py` (from the parent `scripts` directory) to generate the necessary OAuth2 credentials and store them in Secret Manager.
-4.  **Gmail Watch**: Execute `setup_gmail_watch.py` to link your Gmail account to the Pub/Sub topic.
-5.  **Deployment**: Run the `deploy.sh` script to build the container image and deploy the service to Google Cloud Run.
+1.  **Prasyarat**: Pastikan Anda memiliki Proyek Google Cloud dengan API Gmail, API Pub/Sub, API Vertex AI, dan API Secret Manager diaktifkan.
+2.  **Izin**: Jalankan `setup_permissions.py` untuk mengonfigurasi peran IAM yang diperlukan untuk akun layanan.
+3.  **Autentikasi**: Jalankan `gmail_auth.py` (dari direktori `scripts` induk) untuk menghasilkan kredensial OAuth2 yang diperlukan dan menyimpannya di Secret Manager.
+4.  **Gmail Watch**: Jalankan `setup_gmail_watch.py` untuk menautkan akun Gmail Anda ke topik Pub/Sub.
+5.  **Deployment**: Jalankan skrip `deploy.sh` untuk membangun image container dan mendeploy layanan ke Google Cloud Run.
 
-## Testing
+## Pengujian
 
-The system includes various test scripts:
--   `simple_test.py`: A basic test to check if the deployed service endpoint is responsive.
--   `comprehensive_test.py`: Simulates a Pub/Sub message to test the entire processing flow.
--   `test_genai.py`: Specifically tests the AI response generation module.
+Sistem ini mencakup berbagai skrip pengujian:
+-   `simple_test.py`: Tes dasar untuk memeriksa apakah endpoint layanan yang di-deploy responsif.
+-   `comprehensive_test.py`: Mensimulasikan pesan Pub/Sub untuk menguji seluruh alur pemrosesan.
+-   `test_genai.py`: Secara khusus menguji modul pembuatan respons AI.
 
-Run these scripts to ensure all parts of the system are functioning correctly before and after deployment.
+Jalankan skrip ini untuk memastikan semua bagian sistem berfungsi dengan benar sebelum dan sesudah deployment.
 
-A secure, AI-powered Gmail auto-reply system deployed on Google Cloud Run. The system automatically generates and sends personalized responses to emails using Google's Gemini AI model.
+Sistem balas otomatis email Gmail yang aman dan didukung AI, di-deploy di Google Cloud Run. Sistem ini secara otomatis menghasilkan dan mengirimkan respons yang dipersonalisasi ke email menggunakan model AI Gemini dari Google.
 
-## 🚀 Features
+## 🚀 Fitur
 
-### Core Functionality
-- **AI-Powered Responses**: Uses Google GenAI SDK with Vertex AI backend (Gemini 2.5 Flash Lite)
-- **Real-time Processing**: Gmail watch API with Pub/Sub push notifications for instant email detection
-- **Secure Authentication**: Gmail OAuth credentials stored in Google Cloud Secret Manager
-- **Cloud Native**: Deployed on Google Cloud Run with auto-scaling
+### Fungsionalitas Inti
+- **Respons Berbasis AI**: Menggunakan Google GenAI SDK dengan backend Vertex AI (Gemini 2.5 Flash Lite)
+- **Pemrosesan Real-time**: API Gmail watch dengan notifikasi push Pub/Sub untuk deteksi email instan
+- **Autentikasi Aman**: Kredensial Gmail OAuth disimpan di Google Cloud Secret Manager
+- **Cloud Native**: Di-deploy di Google Cloud Run dengan penskalaan otomatis
 
-### Security & Filtering
-- **Email Address Filtering**: Only responds to emails sent to `addhe.warman+cs@gmail.com`
-- **Time-based Filtering**: Only processes emails from the last 24 hours
-- **Spam Protection**: Built-in spam keyword filtering
-- **Duplicate Prevention**: Adds Gmail labels to prevent multiple replies to the same email
-- **Domain Whitelisting**: Optional sender domain validation
+### Keamanan & Penyaringan
+- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `addhe.warman+cs@gmail.com`
+- **Penyaringan Berbasis Waktu**: Hanya memproses email dari 24 jam terakhir
+- **Perlindungan Spam**: Penyaringan kata kunci spam bawaan
+- **Pencegahan Duplikat**: Menambahkan label Gmail untuk mencegah balasan ganda ke email yang sama
+- **Daftar Putih Domain**: Validasi domain pengirim opsional
 
-### Monitoring & Debugging
-- **Comprehensive Logging**: Detailed logs for all operations and errors
-- **Health Check Endpoint**: `/` endpoint for service monitoring
-- **Debug Tools**: Multiple test scripts for validation and troubleshooting
+### Pemantauan & Debugging
+- **Logging Komprehensif**: Log terperinci untuk semua operasi dan kesalahan
+- **Endpoint Pemeriksaan Kesehatan**: Endpoint `/` untuk pemantauan layanan
+- **Alat Debug**: Beberapa skrip pengujian untuk validasi dan pemecahan masalah
 
-## 📁 Project Structure
+## 📁 Struktur Proyek
 
-### Core Files
-- `main.py` - Main Flask application with Pub/Sub processing and AI response generation
-- `deploy.sh` - Cloud Run deployment script
-- `requirements.txt` - Python dependencies
-- `runtime.txt` - Python runtime specification
-- `Procfile` - Gunicorn configuration
-- `gunicorn_config.py` - Server configuration
+### File Inti
+- `main.py` - Aplikasi Flask utama dengan pemrosesan Pub/Sub dan pembuatan respons AI
+- `deploy.sh` - Skrip deployment Cloud Run
+- `requirements.txt` - Dependensi Python
+- `runtime.txt` - Spesifikasi runtime Python
+- `Procfile` - Konfigurasi Gunicorn
+- `gunicorn_config.py` - Konfigurasi server
 
-### Setup & Management Scripts
-- `setup_gmail_watch.py` - Sets up Pub/Sub topic, subscription, and Gmail watch
-- `setup_permissions.py` - Configures IAM permissions for Gmail API and Pub/Sub
-- `activate_gmail_watch.py` - Activates Gmail watch notifications
-- `debug_email.py` - Debug specific email messages by ID
+### Skrip Penyiapan & Manajemen
+- `setup_gmail_watch.py` - Menyiapkan topik Pub/Sub, langganan, dan Gmail watch
+- `setup_permissions.py` - Mengonfigurasi izin IAM untuk Gmail API dan Pub/Sub
+- `activate_gmail_watch.py` - Mengaktifkan notifikasi Gmail watch
+- `debug_email.py` - Debug pesan email tertentu berdasarkan ID
 
-### Testing Scripts
-- `test_genai_vertex.py` - Test GenAI SDK with Vertex AI backend
-- `test_vertex_ai_v2.py` - Test Vertex AI integration
-- `test_direct.py` - Direct API testing
-- `simple_test.py` - Basic endpoint testing
-- `comprehensive_test.py` - Full system simulation
+### Skrip Pengujian
+- `test_genai_vertex.py` - Uji GenAI SDK dengan backend Vertex AI
+- `test_vertex_ai_v2.py` - Uji integrasi Vertex AI
+- `test_direct.py` - Pengujian API langsung
+- `simple_test.py` - Pengujian endpoint dasar
+- `comprehensive_test.py` - Simulasi sistem penuh
 
-## 🔧 Configuration
+## 🔧 Konfigurasi
 
-### Environment Variables
+### Variabel Lingkungan
 - `PROJECT_ID` - Google Cloud project ID (`awanmasterpiece`)
 - `SECRET_NAME` - Gmail OAuth token secret name (default: `gmail-oauth-token`)
 - `VERTEX_MODEL` - AI model name (default: `gemini-2.5-flash-lite`)
