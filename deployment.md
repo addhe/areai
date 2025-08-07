@@ -300,6 +300,127 @@ gcloud secrets versions add customer-api-endpoint --data-file=customer_api_endpo
 
 ---
 
+## **11. Gmail Watch Maintenance**
+
+### **11.1 Watch Duration**
+
+Gmail API watch hanya aktif selama 7 hari dan perlu diperbarui secara berkala. Pastikan untuk menjadwalkan pembaruan watch sebelum kedaluwarsa.
+
+### **11.2 Script untuk Aktivasi Watch**
+
+Berikut contoh script Python untuk mengaktifkan Gmail watch:
+
+```python
+#!/usr/bin/env python3
+import os
+import json
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+from google.cloud import secretmanager
+
+# Konfigurasi
+PROJECT_ID = "your-project-id"
+TOPIC_NAME = f"projects/{PROJECT_ID}/topics/new-email"
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SECRET_NAME = "gmail-oauth-token"
+
+def get_credentials():
+    """Mendapatkan credentials dari Secret Manager atau file lokal."""
+    try:
+        # Coba ambil dari Secret Manager
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{PROJECT_ID}/secrets/{SECRET_NAME}/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        token_json = response.payload.data.decode("UTF-8")
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    except Exception as e:
+        print(f"Error accessing Secret Manager: {e}")
+        # Fallback ke file lokal
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_info(
+                json.loads(open('token.json', 'r').read()), SCOPES)
+        else:
+            raise Exception("No credentials available")
+            
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            raise Exception("Credentials invalid and cannot be refreshed")
+            
+    return creds
+
+def setup_gmail_watch():
+    """Setup Gmail API watch untuk notifikasi ke Pub/Sub."""
+    creds = get_credentials()
+    service = build('gmail', 'v1', credentials=creds)
+    
+    request = {
+        'labelIds': ['INBOX'],
+        'topicName': TOPIC_NAME
+    }
+    
+    response = service.users().watch(userId='me', body=request).execute()
+    print(f"Watch setup successful. History ID: {response.get('historyId')}")
+    print(f"Expiration: {response.get('expiration')}")
+    return response
+
+if __name__ == "__main__":
+    setup_gmail_watch()
+```
+
+### **11.3 Menjadwalkan Pembaruan Watch**
+
+Gunakan Cloud Scheduler untuk menjadwalkan pembaruan watch setiap 6 hari:
+
+```bash
+gcloud scheduler jobs create http renew-gmail-watch \
+  --schedule="0 0 */6 * *" \
+  --uri="https://auto-reply-email-361046956504.asia-southeast2.run.app/renew-watch" \
+  --http-method=POST \
+  --oidc-service-account-email=autoreply-sa@PROJECT_ID.iam.gserviceaccount.com
+```
+
+### **11.4 Monitoring Watch Status**
+
+Untuk memverifikasi status watch:
+
+```python
+def check_watch_status():
+    """Check if Gmail API watch is active."""
+    creds = get_credentials()
+    service = build('gmail', 'v1', credentials=creds)
+    
+    # Get profile to check if watch is active
+    profile = service.users().getProfile(userId='me').execute()
+    history_id = profile.get('historyId')
+    
+    if history_id:
+        print(f"Watch appears to be active. Current history ID: {history_id}")
+        return True
+    else:
+        print("Watch status could not be determined")
+        return False
+```
+
+### **11.5 Troubleshooting Watch Issues**
+
+Jika notifikasi tidak diterima:
+
+1. Verifikasi status watch dengan script di atas
+2. Periksa Pub/Sub subscription metrics di Cloud Console
+3. Periksa logs untuk error:
+   ```bash
+   gcloud logging read "resource.type=pubsub_subscription AND resource.labels.subscription_id=auto-reply-subscription" --limit=20
+   ```
+4. Jika diperlukan, hapus watch dan setup ulang:
+   ```python
+   service.users().stop(userId='me').execute()
+   ```
+---
+
 ## **11. Testing End-to-End**
 
 ### **11.1 Functional Test**
