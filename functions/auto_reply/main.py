@@ -71,9 +71,44 @@ def is_email_allowed(email_data):
         
         # Check if the email is from our own system (prevent reply loops)
         from_address = email_data.get('from', '').lower()
+        from_name = email_data.get('from', '').lower()
+        
+        # Extract name from email format "Name <email@example.com>"
+        if '<' in from_name and '>' in from_name:
+            from_name = from_name.split('<')[0].strip().lower()
+        
+        # Check if email address matches our system
         if ALLOWED_EMAIL_ADDRESS.lower() in from_address:
             logger.info(f"Preventing reply loop: Email is from our own system {from_address}")
             return False, "Email is from our own system"
+            
+        # Check if sender name contains our system name (case insensitive)
+        system_name = ALLOWED_EMAIL_ADDRESS.split('@')[0].lower()
+        if system_name in from_name:
+            logger.info(f"Preventing reply loop: Email is likely from our system (name match) {from_name}")
+            return False, "Email is likely from our system (name match)"
+            
+        # Check if the sender is sending to themselves (common in reply loops)
+        to_address = email_data.get('to', '').lower()
+        sender_email = from_address
+        if '<' in from_address and '>' in from_address:
+            sender_email = from_address.split('<')[1].split('>')[0].lower()
+            
+        if sender_email and to_address and sender_email in to_address:
+            logger.info(f"Preventing reply loop: Sender is sending to themselves - {sender_email} to {to_address}")
+            return False, "Email is a potential reply loop (sender to self)"
+            
+        # Check for common reply loop patterns in the subject
+        subject = email_data.get('subject', '').lower()
+        reply_indicators = ['re:', 'fw:', 'fwd:']
+        reply_count = 0
+        
+        for indicator in reply_indicators:
+            reply_count += subject.count(indicator)
+            
+        if reply_count >= 2:
+            logger.info(f"Preventing reply loop: Multiple reply indicators in subject - {subject}")
+            return False, "Email has multiple reply indicators in subject"
         
         # Check for auto-reply headers or indicators in subject/body
         subject = email_data.get('subject', '').lower()
