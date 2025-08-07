@@ -350,6 +350,24 @@ def add_auto_reply_label(service, msg_id):
         logger.error(f"Error adding auto-reply label: {e}")
         return False
 
+def normalize_email(email):
+    """Normalize email address for consistent comparison.
+    
+    Args:
+        email (str): Email address to normalize
+        
+    Returns:
+        str: Normalized email address (lowercase, stripped)
+    """
+    if not email:
+        return ""
+    
+    # Extract email from format like "Name <email@example.com>"
+    if '<' in email and '>' in email:
+        email = email.split('<')[1].split('>')[0]
+    
+    return email.lower().strip()
+
 def check_is_nasabah(email):
     """Check if the sender is a known customer via API.
     
@@ -358,13 +376,20 @@ def check_is_nasabah(email):
             - is_nasabah (bool): True if email belongs to a customer, False otherwise
             - customer_data (dict): Customer data if available, None otherwise
     """
-    logger.info(f"Checking customer status for: {email}")
+    # Normalize email before checking
+    normalized_email = normalize_email(email)
+    logger.info(f"Checking customer status for: {email} (normalized: {normalized_email})")
+    
+    # Return early if email is empty after normalization
+    if not normalized_email:
+        logger.warning("Empty email after normalization, cannot check customer status")
+        return False, None
     try:
         headers = {
             'x-api-key': config.NASABAH_API_KEY,
             'Accept': 'application/json'
         }
-        params = {'email': email}
+        params = {'email': normalized_email}
         response = requests.get(config.NASABAH_API_URL, headers=headers, params=params, timeout=5)
 
         # Coba parse respons JSON jika ada
@@ -379,6 +404,21 @@ def check_is_nasabah(email):
         if response.status_code == 200:
             # Periksa apakah respons memiliki data yang diharapkan
             if response_data and isinstance(response_data, dict):
+                # Jika respons berisi array data, ambil item pertama
+                if 'data' in response_data and isinstance(response_data['data'], list) and len(response_data['data']) > 0:
+                    customer_data = response_data['data'][0]
+                    # Periksa apakah email dalam data cocok dengan email yang dinormalisasi
+                    if 'email' in customer_data:
+                        api_email = normalize_email(customer_data['email'])
+                        if api_email == normalized_email:
+                            logger.info(f"Customer found in data array for email: {email}")
+                            return True, response_data
+                        else:
+                            logger.warning(f"Email mismatch in data array: requested {normalized_email}, but API returned {api_email}")
+                            return False, None
+                    else:
+                        logger.warning(f"Email field missing in customer data for: {email}")
+                        return False, None
                 # Jika API mengembalikan indikator status nasabah spesifik
                 if 'is_nasabah' in response_data:
                     is_nasabah = response_data['is_nasabah']
@@ -388,10 +428,19 @@ def check_is_nasabah(email):
                     else:
                         logger.info(f"API explicitly confirmed non-customer status for email: {email}")
                         return False, None
-                # Jika tidak ada indikator spesifik, anggap sukses = nasabah ditemukan
+                # Jika tidak ada indikator spesifik, periksa apakah ada data nasabah yang valid
+                elif 'email' in response_data:
+                    # Periksa apakah email dalam respons cocok dengan email yang dinormalisasi
+                    api_email = normalize_email(response_data['email'])
+                    if api_email == normalized_email:
+                        logger.info(f"Customer found for email: {email} (matched email in response)")
+                        return True, response_data
+                    else:
+                        logger.warning(f"Email mismatch: requested {normalized_email}, but API returned {api_email}")
+                        return False, None
                 else:
-                    logger.info(f"Customer found for email: {email} (implied from successful response)")
-                    return True, response_data
+                    logger.warning(f"API response lacks customer verification data for email: {email}")
+                    return False, None
             else:
                 logger.warning(f"API returned 200 but with unexpected data format for email: {email}")
                 # Default ke False jika format data tidak sesuai harapan
