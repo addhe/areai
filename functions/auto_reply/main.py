@@ -576,6 +576,9 @@ def send_reply(service, email_data, response_text):
         message = MIMEMultipart()
         message['to'] = email_data['reply_to']
         message['subject'] = f"Re: {email_data['subject']}"
+        # Ensure replies from recipients go to the +cs alias to align with inbound protections
+        message['From'] = 'addhe.warman+cs@gmail.com'  # May be normalized by Gmail on personal accounts
+        message['Reply-To'] = 'addhe.warman+cs@gmail.com'
         message['In-Reply-To'] = email_data['id']
         message['References'] = email_data['id']
         
