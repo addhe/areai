@@ -167,6 +167,23 @@ Jika mengalami masalah dengan redirect URI:
    - File lokal: `token.json`
    - Google Secret Manager: `gmail-oauth-token`
 
+### **5.4 Token Expiration**
+
+Token OAuth untuk Gmail API memiliki masa berlaku terbatas:
+
+1. **Access Token**: Kedaluwarsa setelah 1 jam
+2. **Refresh Token**: Biasanya valid lebih lama (berbulan-bulan), tetapi dapat kedaluwarsa jika:
+   - User mencabut akses aplikasi
+   - Token tidak digunakan selama 6 bulan
+   - User mengubah password Google Account
+   - Melebihi batas token per user/project
+
+Kode aplikasi sudah dilengkapi dengan logika refresh token otomatis. Jika refresh token kedaluwarsa, Anda perlu menjalankan kembali proses autentikasi:
+
+```bash
+python scripts/gmail_auth.py --project-id=PROJECT_ID --topic=new-email --save-to-secret-manager
+```
+
 ---
 
 ## **6. Pub/Sub Setup**

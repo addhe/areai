@@ -51,6 +51,9 @@ PROJECT_ID = os.environ.get('PROJECT_ID')
 SECRET_NAME = os.environ.get('SECRET_NAME', 'gmail-oauth-token')
 VERTEX_MODEL = os.environ.get('VERTEX_MODEL', 'gemini-2.5-flash-lite')
 
+# Gmail API Watch configuration
+WATCH_EXPIRY_DAYS = 7  # Gmail API watch expires after 7 days
+
 # Email security configuration
 ALLOWED_EMAIL_ADDRESS = 'addhe.warman+cs@gmail.com'  # Only respond to emails sent to this address
 MAX_EMAIL_AGE_HOURS = 24  # Only process emails from last 24 hours
@@ -594,17 +597,36 @@ def send_reply(service, email_data, response_text):
             body={'raw': encoded_message, 'threadId': email_data['threadId']}
         ).execute()
         
+        # Get all labels to find the auto-reply label ID
+        labels = service.users().labels().list(userId='me').execute()
+        
+        # Check if our label exists
+        label_id = None
+        for label in labels.get('labels', []):
+            if label['name'] == AUTO_REPLY_LABEL:
+                label_id = label['id']
+                break
+        
+        # Create label if it doesn't exist
+        if not label_id:
+            label = service.users().labels().create(
+                userId='me',
+                body={'name': AUTO_REPLY_LABEL}
+            ).execute()
+            label_id = label['id']
+            logger.info(f"Created auto-reply label: {label_id}")
+        
         # Add label to original message
         service.users().messages().modify(
             userId='me',
             id=email_data['id'],
-            body={'addLabelIds': [AUTO_REPLY_LABEL]}
+            body={'addLabelIds': [label_id]}
         ).execute()
         
-        print(f"Auto-reply sent: {sent_message['id']}")
+        logger.info(f"Auto-reply sent: {sent_message['id']}")
         return sent_message['id']
     except Exception as e:
-        print(f"Error sending reply: {e}")
+        logger.error(f"Error sending reply: {e}")
         return None
 
 def process_message(service, msg_id):
@@ -617,6 +639,12 @@ def process_message(service, msg_id):
             logger.warning(f"Could not retrieve message {msg_id}, skipping")
             return
         
+        # Extra safety: never react to sent/draft/spam/trash messages
+        msg_labels = set(message.get('labelIds', []))
+        if any(l in msg_labels for l in ['SENT', 'DRAFT', 'SPAM', 'TRASH']):
+            logger.info(f"Skipping message {msg_id} due to labels {msg_labels}")
+            return
+
         # Check if email is recent
         if not is_email_recent(message):
             logger.info(f"Skipping old email {msg_id}")
@@ -681,33 +709,121 @@ def process_new_messages(service, history_id):
             return
 
         # Process new messages
+        found_added = False
         if "history" in history_result:
             logger.info(f"Found {len(history_result['history'])} history records")
+            processed_ids = set()
             for i, history_record in enumerate(history_result["history"]):
                 logger.info(f"Processing history record {i+1}: {history_record}")
-                
-                # Check for messagesAdded
+
+                # Only act on messages explicitly added in this history event to avoid duplicates
                 if "messagesAdded" in history_record:
+                    found_added = True
                     logger.info(f"Found {len(history_record['messagesAdded'])} messages added")
                     for message_added in history_record["messagesAdded"]:
                         message_id = message_added["message"]["id"]
-                        logger.info(f"Processing added message: {message_id}")
+
+                        # Skip duplicates within the same delivery
+                        if message_id in processed_ids:
+                            logger.info(f"Skipping already processed message in this batch: {message_id}")
+                            continue
+
+                        # Fetch minimal metadata to decide eligibility by labels
+                        try:
+                            meta = service.users().messages().get(
+                                userId='me', id=message_id, format='metadata',
+                                metadataHeaders=['From', 'To', 'Subject']
+                            ).execute()
+                        except Exception as e:
+                            logger.warning(f"Could not fetch metadata for {message_id}: {e}. Skipping.")
+                            continue
+
+                        labels = set(meta.get('labelIds', []))
+                        # Process only real incoming unread messages in the inbox
+                        if 'INBOX' not in labels or 'UNREAD' not in labels:
+                            logger.info(f"Skipping message {message_id} due to labels {labels} (needs INBOX+UNREAD)")
+                            continue
+                        # Never react to our own sent items or other non-incoming categories
+                        if any(l in labels for l in ['SENT', 'DRAFT', 'SPAM', 'TRASH']):
+                            logger.info(f"Skipping non-incoming message {message_id} due to labels {labels}")
+                            continue
+
+                        processed_ids.add(message_id)
+                        logger.info(f"Processing added incoming unread message: {message_id}")
                         process_message(service, message_id)
-                
-                # Check for messages (general)
-                if "messages" in history_record:
-                    logger.info(f"Found {len(history_record['messages'])} messages in history")
-                    for message in history_record["messages"]:
-                        message_id = message["id"]
-                        logger.info(f"Processing message from history: {message_id}")
-                        process_message(service, message_id)
-                
-                # Log if no messages found
-                if "messagesAdded" not in history_record and "messages" not in history_record:
-                    logger.info(f"No messages found in history record {i+1}")
+
+                # Log if no messages found we care about
+                if "messagesAdded" not in history_record:
+                    logger.info(f"No messagesAdded found in history record {i+1}")
         else:
             logger.info("No history records found")
-            
+
+        # Fallback: historyId off-by-one can cause empty messagesAdded; retry once with (history_id - 1)
+        if not found_added:
+            try:
+                adjusted_id = str(int(history_id) - 1)
+                logger.info(f"No messagesAdded found; retrying history.list with adjusted startHistoryId={adjusted_id}")
+                history_result_2 = service.users().history().list(
+                    userId='me', startHistoryId=adjusted_id
+                ).execute()
+                if "history" in history_result_2:
+                    processed_ids = set()
+                    for i, history_record in enumerate(history_result_2["history"]):
+                        if "messagesAdded" in history_record:
+                            for message_added in history_record["messagesAdded"]:
+                                message_id = message_added["message"]["id"]
+                                if message_id in processed_ids:
+                                    continue
+                                try:
+                                    meta = service.users().messages().get(
+                                        userId='me', id=message_id, format='metadata',
+                                        metadataHeaders=['From', 'To', 'Subject']
+                                    ).execute()
+                                except Exception as e:
+                                    logger.warning(f"Could not fetch metadata for {message_id}: {e}. Skipping.")
+                                    continue
+                                labels = set(meta.get('labelIds', []))
+                                if 'INBOX' not in labels or 'UNREAD' not in labels:
+                                    continue
+                                if any(l in labels for l in ['SENT', 'DRAFT', 'SPAM', 'TRASH']):
+                                    continue
+                                processed_ids.add(message_id)
+                                logger.info(f"[Fallback] Processing added incoming unread message: {message_id}")
+                                process_message(service, message_id)
+                else:
+                    logger.info("[Fallback] No history records found on retry")
+            except Exception as e:
+                logger.warning(f"Fallback retry with adjusted historyId failed: {e}")
+
+        # Final backfill: If still nothing processed, scan a small batch of recent INBOX+UNREAD
+        # to avoid missing legit new mail when history is empty (e.g., first run, watch resets).
+        if not found_added:
+            try:
+                logger.info("No messagesAdded after fallback; running backfill scan of recent INBOX+UNREAD (max 10)")
+                recent_list = service.users().messages().list(
+                    userId='me', labelIds=['INBOX', 'UNREAD'], maxResults=10
+                ).execute()
+                ids = [m['id'] for m in recent_list.get('messages', [])]
+                logger.info(f"Backfill found {len(ids)} candidate unread messages")
+                processed_backfill = 0
+                for mid in ids:
+                    try:
+                        meta = service.users().messages().get(
+                            userId='me', id=mid, format='metadata',
+                            metadataHeaders=['From', 'To', 'Subject']
+                        ).execute()
+                        labels = set(meta.get('labelIds', []))
+                        if any(l in labels for l in ['SENT', 'DRAFT', 'SPAM', 'TRASH']):
+                            continue
+                        logger.info(f"[Backfill] Processing unread message: {mid}")
+                        process_message(service, mid)
+                        processed_backfill += 1
+                    except Exception as e:
+                        logger.warning(f"Backfill skip {mid} due to error: {e}")
+                logger.info(f"Backfill processed {processed_backfill} messages")
+            except Exception as e:
+                logger.warning(f"Backfill scan failed: {e}")
+
         logger.info("Successfully processed new messages")
     except Exception as e:
         logger.error(f"Error processing messages: {e}", exc_info=True)
@@ -814,6 +930,155 @@ def process_pubsub_push():
     except Exception as e:
         logger.error(f"Error decoding or processing message data: {e}", exc_info=True)
         return f'Error processing message data: {str(e)}', 400
+
+# Add a Gmail API watch status check endpoint
+@app.route('/check-watch-status', methods=['GET'])
+def check_watch_status():
+    """Endpoint to check Gmail API watch status."""
+    logger.info("Received request to check Gmail API watch status")
+    
+    try:
+        # Get credentials from Secret Manager
+        logger.info("Retrieving credentials from Secret Manager")
+        credentials = get_credentials_from_secret_manager()
+        
+        # Build Gmail API service
+        logger.info("Building Gmail API service")
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Get profile to check if watch is active
+        profile = service.users().getProfile(userId='me').execute()
+        history_id = profile.get('historyId')
+        
+        # Check if history ID exists
+        if history_id:
+            logger.info(f"Watch appears to be active. Current history ID: {history_id}")
+            return jsonify({
+                'status': 'success',
+                'watchActive': True,
+                'historyId': history_id
+            }), 200
+        else:
+            logger.warning("Watch status could not be determined")
+            return jsonify({
+                'status': 'warning',
+                'watchActive': False,
+                'message': 'Watch status could not be determined'
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"Error checking Gmail API watch status: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'watchActive': False,
+            'message': f'Error checking Gmail API watch status: {str(e)}'
+        }), 500
+
+# Add a Gmail API watch renewal endpoint
+@app.route('/renew-watch', methods=['POST'])
+def renew_watch():
+    """Endpoint to renew Gmail API watch."""
+    logger.info("Received request to renew Gmail API watch")
+    
+    try:
+        # Get credentials from Secret Manager
+        logger.info("Retrieving credentials from Secret Manager")
+        credentials = get_credentials_from_secret_manager()
+        
+        # Build Gmail API service
+        logger.info("Building Gmail API service")
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Set up watch
+        logger.info("Setting up Gmail API watch")
+        request_body = {
+            'labelIds': ['INBOX'],
+            'topicName': f'projects/{PROJECT_ID}/topics/new-email'
+        }
+        
+        # Execute watch request
+        response = service.users().watch(userId='me', body=request_body).execute()
+        
+        # Log success
+        history_id = response.get('historyId')
+        expiration = response.get('expiration')
+        logger.info(f"Watch setup successful. History ID: {history_id}, Expiration: {expiration}")
+        
+        # Return success response
+        return jsonify({
+            'status': 'success',
+            'message': 'Gmail API watch renewed successfully',
+            'historyId': history_id,
+            'expiration': expiration
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error renewing Gmail API watch: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error renewing Gmail API watch: {str(e)}'
+        }), 500
+
+# Add a Pub/Sub test endpoint
+@app.route('/test-pubsub', methods=['POST'])
+def test_pubsub():
+    """Endpoint to test Pub/Sub integration."""
+    logger.info("Received request to test Pub/Sub integration")
+    
+    try:
+        # Create a test message similar to what Gmail API watch would send
+        test_data = {
+            'emailAddress': ALLOWED_EMAIL_ADDRESS,
+            'historyId': str(int(time.time())),  # Use current timestamp as dummy history ID
+        }
+        
+        # Log the test data
+        logger.info(f"Test data: {test_data}")
+        
+        # Get credentials from Secret Manager
+        logger.info("Retrieving credentials from Secret Manager")
+        credentials = get_credentials_from_secret_manager()
+        
+        # Build Gmail API service
+        logger.info("Building Gmail API service")
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Process the test message
+        logger.info(f"Processing test message with history ID {test_data['historyId']}")
+        
+        # Get recent messages from inbox
+        results = service.users().messages().list(
+            userId='me',
+            labelIds=['INBOX'],
+            maxResults=5
+        ).execute()
+        
+        messages = results.get('messages', [])
+        
+        if not messages:
+            logger.warning("No recent messages found in inbox")
+            return jsonify({
+                'status': 'warning',
+                'message': 'No recent messages found in inbox to process'
+            }), 200
+        
+        # Process the most recent message
+        msg_id = messages[0]['id']
+        logger.info(f"Processing most recent message: {msg_id}")
+        process_message(service, msg_id)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Pub/Sub test successful, processed most recent message',
+            'messageId': msg_id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error testing Pub/Sub integration: {e}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Error testing Pub/Sub integration: {str(e)}'
+        }), 500
 
 # Add a health check endpoint
 @app.route('/', methods=['GET'])
