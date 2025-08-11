@@ -599,20 +599,45 @@ Hormat kami,
         # Stream the response safely
         logger.info("Sending message to Vertex AI chat session (streaming)")
         response_text = ""
-        for chunk in chat.send_message(prompt, **gen_kwargs):
+        try:
+            for chunk in chat.send_message(prompt, **gen_kwargs):
+                try:
+                    if hasattr(chunk, 'text') and chunk.text:
+                        response_text += chunk.text
+                except Exception:
+                    # be resilient to chunk types
+                    pass
+            response_text = response_text.strip()
+            if STRICT_PRIVACY:
+                response_text = sanitize_generated_text(response_text)
+            logger.info(f"Successfully generated AI response: {response_text[:100]}...")
+            return response_text
+        except Exception as stream_err:
+            logger.error(f"Vertex AI streaming error on model {VERTEX_MODEL}: {stream_err}", exc_info=True)
+
+        # Fallback: try non-streaming on configured model, then alternate models
+        fallback_models = [VERTEX_MODEL, 'gemini-1.5-flash', 'gemini-1.5-flash-002']
+        for m in fallback_models:
             try:
-                if hasattr(chunk, 'text') and chunk.text:
-                    response_text += chunk.text
-            except Exception:
-                # be resilient to chunk types
-                pass
-        
-        response_text = response_text.strip()
-        if STRICT_PRIVACY:
-            response_text = sanitize_generated_text(response_text)
-        logger.info(f"Successfully generated AI response: {response_text[:100]}...")
-        return response_text
-        
+                if m != VERTEX_MODEL:
+                    logger.info(f"Trying fallback model: {m}")
+                    model = GenerativeModel(m)
+                    chat = model.start_chat(history=[])
+                nonstream_kwargs = {k: v for k, v in gen_kwargs.items() if k != 'stream'}
+                resp = chat.send_message(prompt, **nonstream_kwargs)
+                # resp could be a single object with .text
+                text = getattr(resp, 'text', '') or ''
+                text = text.strip()
+                if not text:
+                    continue
+                if STRICT_PRIVACY:
+                    text = sanitize_generated_text(text)
+                logger.info(f"Generated AI response via fallback {m}: {text[:100]}...")
+                return text
+            except Exception as e2:
+                logger.error(f"Fallback generation failed on model {m}: {e2}")
+                continue
+
     except Exception as e:
         logger.error(f"Error generating AI response: {e}", exc_info=True)
         # Return a fallback response in case of error
@@ -621,6 +646,21 @@ Hormat kami,
 def send_reply(service, email_data, response_text):
     """Send an auto-reply email."""
     try:
+        # Dedup: if thread already has our alias reply, skip sending to prevent duplicates
+        try:
+            thread = service.users().threads().get(
+                userId='me', id=email_data['threadId'], format='metadata',
+                metadataHeaders=['From']
+            ).execute()
+            for m in thread.get('messages', []):
+                headers = m.get('payload', {}).get('headers', [])
+                from_val = next((h.get('value') for h in headers if h.get('name') == 'From'), '')
+                if 'addhe.warman+cs@gmail.com' in (from_val or ''):
+                    logger.info("Detected existing reply from +cs alias in thread; skipping duplicate send.")
+                    return None
+        except Exception as dedup_err:
+            logger.warning(f"Dedup check failed, proceeding to send: {dedup_err}")
+
         # Create message
         message = MIMEMultipart()
         message['to'] = email_data['reply_to']
