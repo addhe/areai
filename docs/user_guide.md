@@ -293,3 +293,16 @@ For additional support:
 - Review the [API documentation](api.md)
 - Submit issues via the project's issue tracker
 - Contact the development team at support@example.com
+
+## Operational Endpoints (v2.1.0)
+
+- **GET `/check-watch-status`**: Periksa status Gmail watch (perhatikan `historyId` dan `expiration`).
+- **POST `/renew-watch`**: Perbarui Gmail watch sebelum kedaluwarsa.
+- **POST `/test-pubsub`**: Simulasi pesan Pub/Sub untuk menguji alur pemrosesan.
+
+## Privacy & Isolation Notes (v2.1.0)
+
+- **Isolasi Chat per Email**: Sistem memulai sesi chat Vertex AI baru per email menggunakan `start_chat(history=[])` agar tidak ada memori silang antar pelanggan/thread.
+- **Stripping Riwayat**: Teks kutipan/riwayat dihapus dari body sebelum diproses untuk membatasi konteks.
+- **Sanitasi Output**: Balasan AI disaring untuk meredaksi email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII).
+- **Header Aman**: `From` dan `Reply-To` disetel ke `addhe.warman+cs@gmail.com` untuk memastikan balasan diteruskan ke alias +cs.

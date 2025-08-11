@@ -59,6 +59,17 @@ After the deployment script completes successfully, you should verify that the s
 3.  **Test the Process Endpoint**:
     Use the `simple_test.py` or `comprehensive_test.py` scripts to send a test request to the `/process` endpoint and ensure it responds with `200 OK`.
 
+4.  **Operational Endpoints**:
+    Verifikasi endpoint operasional berikut:
+    - `GET /check-watch-status` — mengembalikan status Gmail watch (cek `expiration` dan `historyId`).
+    - `POST /renew-watch` — memperbarui watch; pastikan respons sukses dan log mencatat pembaruan.
+    - `POST /test-pubsub` — simulasi payload Pub/Sub; endpoint `/process` harus memproses dan merespons `200 OK`.
+
+5.  **Header Routing Validation**:
+    Kirim email ke `addhe.warman+cs@gmail.com`, lalu periksa balasan keluar:
+    - Header `From` dan `Reply-To` harus `addhe.warman+cs@gmail.com`.
+    - Balasan tidak mengandung alamat email lain (kecuali alias +cs) atau deretan digit panjang yang sensitif.
+
 ## Important Notes
 
 -   **Service Account**: The `deploy.sh` script configures the Cloud Run service to use the default Compute Engine service account. Ensure this service account has the necessary permissions as outlined in `setup_permissions.py`.

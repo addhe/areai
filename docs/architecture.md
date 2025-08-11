@@ -235,3 +235,10 @@ The system implements comprehensive error handling strategies:
 ## Conclusion
 
 The Auto Reply Email system provides a robust, scalable solution for automatically responding to emails with AI-generated contextual replies. The event-driven architecture ensures efficient processing, while comprehensive error handling and monitoring capabilities maintain system reliability.
+
+## Privacy & Isolation (v2.1.0)
+
+- **Per-email AI session**: Reply generation uses Vertex AI `GenerativeModel.start_chat(history=[])` per request to prevent cross-thread/customer memory.
+- **Input minimization**: Quoted/forwarded history is removed from email body before prompt construction.
+- **Output sanitization**: AI output is sanitized to redact non-+cs emails and long digit sequences that could be PII.
+- **Secure reply routing**: Outbound `send_reply()` sets `From` and `Reply-To` to `addhe.warman+cs@gmail.com` to ensure replies return to the protected alias.

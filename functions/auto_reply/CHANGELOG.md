@@ -2,6 +2,27 @@
 
 Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
+## [2.1.0] - 2025-08-12
+
+### 🔒 Keamanan & Privasi
+- Isolasi sesi AI per email menggunakan Vertex AI `GenerativeModel.start_chat(history=[])` agar tidak ada memori silang antar pelanggan/thread.
+- Guardrail privasi ketat: strip teks kutipan/riwayat dari body email sebelum diproses dan sanitasi keluaran AI (redaksi alamat email non-+cs dan deretan digit panjang/PII).
+- Pengaturan header balasan: set `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` untuk memastikan jalur balasan aman via alias +cs.
+
+### ✉️ Perilaku Balasan
+- Hanya membalas email yang ditujukan ke alias `addhe.warman+cs@gmail.com` dan bukan dari sistem sendiri (anti-reply loop).
+- Penambahan label Gmail untuk mencegah balasan ganda pada pesan yang sama.
+
+### 🔧 Operasional & Ketahanan
+- Backfill scan: jika history kosong, sistem memindai pesan UNREAD terbaru agar tidak ada email baru yang terlewat selama reset watch.
+- Endpoint operasional baru:
+  - `GET /check-watch-status` — cek status Gmail watch.
+  - `POST /renew-watch` — perbarui watch Gmail.
+  - `POST /test-pubsub` — simulasi pemrosesan pesan Pub/Sub.
+
+### 🧰 Lainnya
+- Peningkatan logging dan instruksi prompt untuk mencegah penggunaan data di luar konteks email saat ini dan data pelanggan yang terverifikasi.
+
 ## [1.0.0] - 2025-08-06
 
 ### Penambahan
@@ -96,10 +117,10 @@ Semua perubahan penting pada Sistem Balas Otomatis Email Gmail didokumentasikan 
 - Efficient error handling
 
 ### 🔐 Security Hardening
-- OAuth 2.0 with secure token storage
-- Input validation and sanitization
-- Rate limiting considerations
-- Secure environment variable handling
+- OAuth 2.0 dengan penyimpanan token aman
+- Validasi input dan sanitasi
+- Pertimbangan rate limiting
+- Penanganan variabel lingkungan yang aman
 
 ---
 

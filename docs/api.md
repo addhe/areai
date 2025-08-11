@@ -398,13 +398,12 @@ Where the decoded data contains:
 
 ### Vertex AI Integration
 
-The system uses Vertex AI Gemini model for generating email replies. The API is called with:
+The system uses Vertex AI Gemini for generating email replies with strict privacy isolation:
 
-- Model: `gemini-1.0-pro`
-- Temperature: `0.2` (for consistent, professional responses)
-- Max output tokens: `1024`
-- Top-k: `40`
-- Top-p: `0.8`
+- Per-email isolated chat session via `GenerativeModel(...).start_chat(history=[])` to prevent cross-customer memory.
+- Model is configurable via env var `VERTEX_MODEL` (default: `gemini-2.5-flash-lite`).
+- Typical generation params: temperature `0.2`, top-p `0.8`, top-k `40`, max output tokens `1024`.
+- Response text is sanitized to redact non-+cs emails and long digit sequences; quoted history is stripped from inputs.
 
 ### Customer API Integration
 

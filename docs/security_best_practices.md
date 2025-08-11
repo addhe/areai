@@ -829,3 +829,11 @@ Use this checklist to ensure your Auto Reply Email system meets security require
 ## Conclusion
 
 Implementing these security best practices will help ensure your Auto Reply Email system protects sensitive data, maintains compliance, and prevents unauthorized access. Security should be an ongoing process, with regular reviews and updates to address emerging threats and changing requirements.
+
+## AI Privacy Controls (v2.1.0)
+
+- **Per-email chat isolation**: Initialize Vertex AI chat with `start_chat(history=[])` for setiap email untuk mencegah kebocoran memori lintas pelanggan/thread.
+- **Strip quoted history**: Hapus teks kutipan/riwayat dari body sebelum dikirim ke AI agar konteks terbatas pada email aktif.
+- **Output sanitization**: Redaksi alamat email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun) dari output AI.
+- **Reply-To alias enforcement**: Set `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` untuk memastikan balasan masuk melalui jalur alias yang dilindungi.
+- **Scope minimization**: Hanya kirimkan field yang diperlukan (subject, potongan body terpilih) ke AI; hindari metadata sensitif yang tidak perlu.

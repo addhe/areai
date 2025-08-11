@@ -252,3 +252,18 @@ python3 test_genai_vertex.py
 4. Store the credentials in Secret Manager
 5. Create a Pub/Sub topic and subscription for Gmail notifications
 6. Deploy the application to Cloud Run using the deployment script
+
+## 🔒 Pembaruan Privasi & Isolasi (v2.1.0)
+
+- **Isolasi Chat per Email**: `generate_ai_response()` kini menggunakan `GenerativeModel(...).start_chat(history=[])` per email sehingga tidak ada memori silang antar pelanggan/thread.
+- **Guardrail Privasi**:
+  - Menghapus kutipan/riwayat dari body email sebelum diproses AI.
+  - Menyaring keluaran AI untuk meredaksi alamat email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun).
+- **Routing Header Balasan**:
+  - `send_reply()` menyetel `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` agar balasan pelanggan selalu menuju alias +cs yang terlindungi.
+- **Endpoint Operasional**:
+  - `GET /check-watch-status` — memeriksa status Gmail watch.
+  - `POST /renew-watch` — memperbarui Gmail watch sebelum kedaluwarsa.
+  - `POST /test-pubsub` — uji integrasi Pub/Sub dengan simulasi pesan.
+
+Catatan: Sistem hanya merespons email yang ditujukan ke `addhe.warman+cs@gmail.com` dan menerapkan label untuk mencegah balasan ganda serta menghindari reply loop.

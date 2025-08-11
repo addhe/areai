@@ -410,6 +410,13 @@ Warm regards,
 Green Grocery Delivery Customer Care Team
 ```
 
+## Privacy Guardrails (v2.1.0)
+
+- **Per-email chat isolation**: Start a fresh chat session with `start_chat(history=[])` for each email to prevent cross-customer/thread memory.
+- **Strip quoted history**: Remove quoted/forwarded content from the email body before constructing the prompt.
+- **Sanitize outputs**: Redact any email addresses except `addhe.warman+cs@gmail.com` and long digit sequences that may contain PII (e.g., KTP/account numbers).
+- **Instructional constraints**: Include explicit instructions in the prompt to avoid referencing other emails/customers and to use only the current email context and verified customer data.
+
 ## Conclusion
 
 Effective prompt engineering is crucial for generating high-quality, contextual email responses. By following the guidelines and techniques in this document, you can optimize your Auto Reply Email system to provide professional, helpful, and personalized responses to customer inquiries.
