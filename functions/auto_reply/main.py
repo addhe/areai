@@ -524,14 +524,9 @@ def generate_ai_response(email_data, is_nasabah, customer_data=None):
         customer_data (dict, optional): Customer data from API including saldo info
     """
     try:
-        logger.info("Initializing GenAI client with Vertex AI backend")
-        
-        # Create GenAI client with Vertex AI backend
-        client = genai.Client(
-            vertexai=True,
-            project=PROJECT_ID,
-            location="us-central1",
-        )
+        logger.info("Initializing Vertex AI for per-email chat session")
+        # Initialize Vertex AI explicitly (stateless per request)
+        vertexai.init(project=PROJECT_ID, location="us-central1")
         
         # Ekstrak informasi saldo jika tersedia
         saldo_info = ""
@@ -588,38 +583,29 @@ Hormat kami,
 [Nama Anda/Departemen Anda]
 """
         
-        logger.info(f"Using model: {VERTEX_MODEL}")
-        
-        # Create content
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=prompt)
-                ]
-            )
-        ]
-        
-        # Generate content config
-        generate_content_config = types.GenerateContentConfig(
-            temperature=0.7,
-            top_p=0.8,
-            max_output_tokens=256,
-            thinking_config=types.ThinkingConfig(
-                thinking_budget=0,
-            ),
-        )
-        
-        # Generate response
-        logger.info("Sending request to Vertex AI via GenAI SDK")
+        logger.info(f"Using model: {VERTEX_MODEL} with isolated chat session")
+        # Start an isolated chat session per email without any prior history
+        model = GenerativeModel(VERTEX_MODEL)
+        chat = model.start_chat(history=[])
+
+        # Generation parameters (kept modest)
+        gen_kwargs = {
+            "temperature": 0.7,
+            "top_p": 0.8,
+            "max_output_tokens": 256,
+            "stream": True,
+        }
+
+        # Stream the response safely
+        logger.info("Sending message to Vertex AI chat session (streaming)")
         response_text = ""
-        
-        for chunk in client.models.generate_content_stream(
-            model=VERTEX_MODEL,
-            contents=contents,
-            config=generate_content_config,
-        ):
-            response_text += chunk.text
+        for chunk in chat.send_message(prompt, **gen_kwargs):
+            try:
+                if hasattr(chunk, 'text') and chunk.text:
+                    response_text += chunk.text
+            except Exception:
+                # be resilient to chunk types
+                pass
         
         response_text = response_text.strip()
         if STRICT_PRIVACY:
