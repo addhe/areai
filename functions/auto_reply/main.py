@@ -63,6 +63,9 @@ ALLOWED_SENDERS = [  # Whitelist of allowed sender domains (optional)
 ]
 AUTO_REPLY_LABEL = 'Auto-Replied'
 
+# Privacy & safety flags
+STRICT_PRIVACY = True  # Enforce strict prompt rules and output sanitization
+
 def is_email_allowed(email_data):
     """Check if email meets security criteria for auto-reply."""
     try:
@@ -280,6 +283,54 @@ def extract_email_data(message):
     
     return data
 
+def strip_quoted_text(body):
+    """Remove quoted previous messages from an email body to avoid leaking prior context.
+    Simple heuristics for common reply formats.
+    """
+    try:
+        if not body:
+            return body
+        lines = body.splitlines()
+        cleaned = []
+        for line in lines:
+            l = line.strip()
+            # Skip typical quoted markers
+            if l.startswith('>'):
+                continue
+            if l.lower().startswith('on ') and 'wrote:' in l.lower():
+                break
+            if '-------- Forwarded message --------' in l:
+                break
+            if l.startswith('From:') and '@' in l:
+                break
+            cleaned.append(line)
+        # Join and trim excessive blank lines
+        text = '\n'.join(cleaned).strip()
+        # Keep only the first 1500 chars to minimize accidental context leakage
+        return text[:1500]
+    except Exception:
+        return body
+
+def sanitize_generated_text(text):
+    """Redact potential PII artifacts such as emails and long digit sequences."""
+    try:
+        import re
+        if not text:
+            return text
+        # Redact email addresses except our cs alias
+        def _mask_email(m):
+            email = m.group(0)
+            if 'addhe.warman+cs@gmail.com' in email:
+                return email
+            return '[redacted-email]'
+        text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", _mask_email, text)
+        # Redact long digit sequences (8+)
+        text = re.sub(r"(?<!\d)(\d{8,})(?!\d)", "[redacted-number]", text)
+        # Collapse multiple spaces/newlines
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        return text.strip()
+    except Exception:
+        return text
 def has_auto_reply_label(service, msg_id):
     """Check if message already has auto-reply label."""
     try:
@@ -503,29 +554,39 @@ def generate_ai_response(email_data, is_nasabah, customer_data=None):
                 saldo_info = f"\n- Saldo Anda: Rp {formatted_saldo}"
                 logger.info(f"Extracted balance: {saldo_value}, formatted as: {formatted_saldo}")
         
-        # Buat prompt dalam Bahasa Indonesia
+        # Preprocess: strip quoted history to avoid cross-thread leakage
+        body_for_model = strip_quoted_text(email_data.get('body', '')) if STRICT_PRIVACY else email_data.get('body', '')
+
+        # Buat prompt dalam Bahasa Indonesia dengan guardrails ketat
         prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
 
-PENTING:
-- Balas dalam Bahasa Indonesia.
-- JANGAN menambahkan frasa pengantar seperti "Tentu, ini balasannya:" atau sejenisnya.
-- Langsung mulai dengan "Kepada [nama]" atau sapaan yang sesuai.
-- Jika ada pertanyaan tentang saldo, berikan informasi saldo yang sebenarnya, bukan placeholder "[Jumlah Saldo Anda]".
+PENTING (KEAMANAN & PRIVASI):
+- Hanya gunakan informasi yang ada pada email saat ini dan konteks tambahan yang diberikan di bawah ini.
+- Jangan gunakan memori/riwayat percakapan lain, data dari email lain, atau pengetahuan eksternal tentang pelanggan.
+- Jangan menyebutkan data pribadi apa pun selain nama pengirim dan saldo yang diberikan (jika ada). Dilarang menyebut email/telepon/nomor akun.
+- Jika email menyinggung "pertanyaan terakhir" atau histori namun tidak jelas, jawab secara umum atau minta klarifikasi; jangan menebak atau mengutip histori yang tidak ada di email saat ini.
+- Jika bukan nasabah terverifikasi, JANGAN sebut nominal saldo.
 
 Dari: {email_data['from']}
 Subjek: {email_data['subject']}
-Pesan: {email_data['body']}
+Pesan (sudah dibersihkan dari kutipan histori): {body_for_model}
 
 Konteks Tambahan:
 - Status Pengirim: {'Nasabah Terverifikasi' if is_nasabah else 'Bukan Nasabah'}{saldo_info}
 
-Balasan Anda harus:
-- Mengakui email mereka
-- Membantu dan profesional
-- Ringkas (2-3 kalimat)
-- Diakhiri dengan sopan
+Balasan harus:
+- Sopan dan profesional, ringkas (2-3 kalimat)
+- Tidak menyertakan placeholder apa pun
+- Tidak meminta info sensitif (PIN/OTP/kata sandi)
+- Tidak menyertakan tanda tangan otomatis di luar format yang diminta
 
-Balasan:"""
+Format:
+Kepada [Nama],
+[Isi 2-3 kalimat]
+
+Hormat kami,
+[Nama Anda/Departemen Anda]
+"""
         
         logger.info(f"Using model: {VERTEX_MODEL}")
         
@@ -561,6 +622,8 @@ Balasan:"""
             response_text += chunk.text
         
         response_text = response_text.strip()
+        if STRICT_PRIVACY:
+            response_text = sanitize_generated_text(response_text)
         logger.info(f"Successfully generated AI response: {response_text[:100]}...")
         return response_text
         
