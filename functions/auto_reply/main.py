@@ -29,7 +29,7 @@ try:
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
-    logger.info("GenAI SDK not available, will use Vertex AI only")
+    # GenAI SDK not available; will use Vertex AI only
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
