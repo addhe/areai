@@ -22,15 +22,6 @@ from vertexai.generative_models import GenerativeModel
 import requests
 # Config is loaded from environment variables
 
-# Try to import GenAI SDK (optional)
-try:
-    from google import genai
-    from google.genai import types
-    GENAI_AVAILABLE = True
-except ImportError:
-    GENAI_AVAILABLE = False
-    # GenAI SDK not available; will use Vertex AI only
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
