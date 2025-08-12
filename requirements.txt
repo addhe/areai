@@ -4,7 +4,7 @@ gunicorn==21.2.0
 
 # Google Cloud
 google-cloud-pubsub==2.18.4
-google-cloud-aiplatform==1.36.4
+google-cloud-aiplatform==1.50.0
 google-cloud-secret-manager==2.16.4
 google-cloud-logging==3.8.0
 google-auth==2.23.0
