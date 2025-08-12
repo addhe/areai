@@ -23,5 +23,5 @@ ENV DESTINATION_EMAIL=${DESTINATION_EMAIL:-"addhe.warman+cs@gmail.com"}
 # Expose port untuk Cloud Run
 EXPOSE 8080
 
-# Run the application with gunicorn for production
-CMD exec gunicorn --bind :8080 --workers 1 --threads 8 --timeout 0 main:app
+# Run the application with gunicorn for production (Flask app is in functions/auto_reply/main.py)
+CMD exec gunicorn --bind :8080 --workers 1 --threads 8 --timeout 0 functions.auto_reply.main:app
