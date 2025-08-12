@@ -50,6 +50,8 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly',
 PROJECT_ID = os.environ.get('PROJECT_ID')
 SECRET_NAME = os.environ.get('SECRET_NAME', 'gmail-oauth-token')
 VERTEX_MODEL = os.environ.get('VERTEX_MODEL', 'gemini-2.5-flash-lite')
+PRIMARY_FROM = os.environ.get('PRIMARY_FROM', '')  # Optional: primary account address to use for From
+USE_PRIMARY_FROM = os.environ.get('USE_PRIMARY_FROM', 'false').lower() == 'true'
 
 # Gmail API Watch configuration
 WATCH_EXPIRY_DAYS = 7  # Gmail API watch expires after 7 days
@@ -666,7 +668,14 @@ def send_reply(service, email_data, response_text):
         message['to'] = email_data['reply_to']
         message['subject'] = f"Re: {email_data['subject']}"
         # Ensure replies from recipients go to the +cs alias to align with inbound protections
-        message['From'] = 'addhe.warman+cs@gmail.com'  # May be normalized by Gmail on personal accounts
+        from_addr = 'addhe.warman+cs@gmail.com'
+        # If alias isn't verified yet, optionally send from primary while keeping Reply-To to alias
+        if USE_PRIMARY_FROM and PRIMARY_FROM:
+            logger.info(f"Using PRIMARY_FROM for send: {PRIMARY_FROM}; Reply-To remains alias")
+            from_addr = PRIMARY_FROM
+        else:
+            logger.info("Using alias as From for send: addhe.warman+cs@gmail.com")
+        message['From'] = from_addr  # Gmail requires verified send-as for non-primary
         message['Reply-To'] = 'addhe.warman+cs@gmail.com'
         message['In-Reply-To'] = email_data['id']
         message['References'] = email_data['id']
@@ -682,12 +691,28 @@ def send_reply(service, email_data, response_text):
         
         # Encode message
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        logger.info(
+            f"Attempting Gmail send: to={email_data['reply_to']}, threadId={email_data['threadId']}, from={from_addr}"
+        )
         
-        # Send message
-        sent_message = service.users().messages().send(
-            userId='me',
-            body={'raw': encoded_message, 'threadId': email_data['threadId']}
-        ).execute()
+        # Send message (labeling happens only after successful send)
+        try:
+            sent_message = service.users().messages().send(
+                userId='me',
+                body={'raw': encoded_message, 'threadId': email_data['threadId']}
+            ).execute()
+        except HttpError as he:
+            # Log detailed Gmail error and do NOT label the original message
+            status = getattr(he, 'status_code', None) or getattr(he, 'resp', {}).status if hasattr(getattr(he, 'resp', None), 'status') else None
+            try:
+                err_body = he.content.decode('utf-8') if hasattr(he, 'content') and he.content else str(he)
+            except Exception:
+                err_body = str(he)
+            logger.error(f"Gmail send HttpError status={status}, body={err_body}")
+            return None
+        except Exception as e:
+            logger.error(f"Gmail send unexpected error: {e}", exc_info=True)
+            return None
         
         # Get all labels to find the auto-reply label ID
         labels = service.users().labels().list(userId='me').execute()
@@ -718,7 +743,7 @@ def send_reply(service, email_data, response_text):
         logger.info(f"Auto-reply sent: {sent_message['id']}")
         return sent_message['id']
     except Exception as e:
-        logger.error(f"Error sending reply: {e}")
+        logger.error(f"Error sending reply: {e}", exc_info=True)
         return None
 
 def process_message(service, msg_id):
