@@ -18,7 +18,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --region ${REGION} \
   --allow-unauthenticated \
   --service-account ${SERVICE_ACCOUNT} \
-  --set-env-vars="PROJECT_ID=${PROJECT_ID},SECRET_NAME=gmail-oauth-token,VERTEX_MODEL=gemini-2.5-flash-lite" \
+  --set-env-vars="PROJECT_ID=${PROJECT_ID},SECRET_NAME=gmail-oauth-token,VERTEX_MODEL=gemini-2.5-flash-lite,USE_PRIMARY_FROM=true,PRIMARY_FROM=addhe.warman@gmail.com" \
   --memory 512Mi \
   --cpu 1 \
   --timeout 300s \

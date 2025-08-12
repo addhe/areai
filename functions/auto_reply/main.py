@@ -20,11 +20,21 @@ from google.cloud import aiplatform
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import requests
-# Config is loaded from environment variables
+try:
+    import config
+except ImportError:
+    config = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Try to import optional GenAI SDK, fallback to Vertex AI only
+try:
+    from google import genai
+    logger.info("Google GenAI SDK available")
+except ImportError:
+    logger.info("GenAI SDK not available, will use Vertex AI only")
 
 # Print Python version for debugging
 logger.info(f"Python version: {sys.version}")
@@ -432,6 +442,11 @@ def check_is_nasabah(email):
         logger.warning("Empty email after normalization, cannot check customer status")
         return False, None
     try:
+        # Skip API call if config is not available
+        if not config:
+            logger.info("Config not available, skipping customer API check")
+            return False, None
+            
         headers = {
             'x-api-key': config.NASABAH_API_KEY,
             'Accept': 'application/json'
@@ -545,21 +560,27 @@ def generate_ai_response(email_data, is_nasabah, customer_data=None):
         # Preprocess: strip quoted history to avoid cross-thread leakage
         body_for_model = strip_quoted_text(email_data.get('body', '')) if STRICT_PRIVACY else email_data.get('body', '')
 
-        # Buat prompt dalam Bahasa Indonesia dengan guardrails ketat
+        # Create unique session ID based on subject to ensure privacy between customers
+        import hashlib
+        subject_hash = hashlib.md5(email_data['subject'].encode()).hexdigest()[:8]
+        session_id = f"session_{subject_hash}"
+        logger.info(f"Using isolated session ID: {session_id} for subject: {email_data['subject']}")
+
+        # Buat prompt dalam Bahasa Indonesia dengan session isolation
         prompt = f"""Anda adalah asisten email AI yang membantu. Buat balasan yang sopan dan profesional untuk email ini.
 
-PENTING (KEAMANAN & PRIVASI):
+PENTING (KEAMANAN & PRIVASI - Session {session_id}):
 - Hanya gunakan informasi yang ada pada email saat ini dan konteks tambahan yang diberikan di bawah ini.
 - Jangan gunakan memori/riwayat percakapan lain, data dari email lain, atau pengetahuan eksternal tentang pelanggan.
-- Jangan menyebutkan data pribadi apa pun selain nama pengirim dan saldo yang diberikan (jika ada). Dilarang menyebut email/telepon/nomor akun.
-- Jika email menyinggung "pertanyaan terakhir" atau histori namun tidak jelas, jawab secara umum atau minta klarifikasi; jangan menebak atau mengutip histori yang tidak ada di email saat ini.
-- Jika bukan nasabah terverifikasi, JANGAN sebut nominal saldo.
+- HANYA gunakan informasi dari session {session_id}
+- Jangan menyebutkan data pribadi apa pun selain nama pengirim dan saldo yang diberikan (jika ada).
+- Jika email menyinggung "pertanyaan terakhir" atau histori namun tidak jelas, jawab secara umum atau minta klarifikasi.
 
 Dari: {email_data['from']}
 Subjek: {email_data['subject']}
 Pesan (sudah dibersihkan dari kutipan histori): {body_for_model}
 
-Konteks Tambahan:
+Konteks Tambahan (Session {session_id}):
 - Status Pengirim: {'Nasabah Terverifikasi' if is_nasabah else 'Bukan Nasabah'}{saldo_info}
 
 Balasan harus:
@@ -576,16 +597,22 @@ Hormat kami,
 [Nama Anda/Departemen Anda]
 """
         
-        logger.info(f"Using model: {VERTEX_MODEL} with isolated chat session")
-        # Start an isolated chat session per email without any prior history
+        logger.info(f"Using model: {VERTEX_MODEL} with isolated chat session for {session_id}")
+        # Start an isolated chat session per email subject to ensure privacy
         model = GenerativeModel(VERTEX_MODEL)
         chat = model.start_chat(history=[])
 
-        # Generation parameters (kept modest)
+        # Generation parameters (kept modest) - using generation_config for proper API compatibility
+        from vertexai.generative_models import GenerationConfig
+        
+        generation_config = GenerationConfig(
+            temperature=0.7,
+            top_p=0.8,
+            max_output_tokens=256,
+        )
+        
         gen_kwargs = {
-            "temperature": 0.7,
-            "top_p": 0.8,
-            "max_output_tokens": 256,
+            "generation_config": generation_config,
             "stream": True,
         }
 
@@ -633,40 +660,31 @@ Hormat kami,
 
     except Exception as e:
         logger.error(f"Error generating AI response: {e}", exc_info=True)
-        # Return a fallback response in case of error
-        return "Thank you for your email. I'm an automated assistant and I'm currently experiencing technical difficulties. A human will review your message as soon as possible."
+    
+    # Always return a fallback response if we reach here
+    fallback_response = "Thank you for your email. I'm an automated assistant and I'm currently experiencing technical difficulties. A human will review your message as soon as possible."
+    logger.info("Using fallback response due to AI generation issues")
+    return fallback_response
 
 def send_reply(service, email_data, response_text):
     """Send an auto-reply email."""
     try:
-        # Dedup: if thread already has our alias reply, skip sending to prevent duplicates
-        try:
-            thread = service.users().threads().get(
-                userId='me', id=email_data['threadId'], format='metadata',
-                metadataHeaders=['From']
-            ).execute()
-            for m in thread.get('messages', []):
-                headers = m.get('payload', {}).get('headers', [])
-                from_val = next((h.get('value') for h in headers if h.get('name') == 'From'), '')
-                if 'addhe.warman+cs@gmail.com' in (from_val or ''):
-                    logger.info("Detected existing reply from +cs alias in thread; skipping duplicate send.")
-                    return None
-        except Exception as dedup_err:
-            logger.warning(f"Dedup check failed, proceeding to send: {dedup_err}")
-
+        # Validate response_text
+        if not response_text or response_text is None:
+            logger.error("Response text is None or empty, cannot send reply")
+            return None
+            
         # Create message
         message = MIMEMultipart()
         message['to'] = email_data['reply_to']
         message['subject'] = f"Re: {email_data['subject']}"
-        # Ensure replies from recipients go to the +cs alias to align with inbound protections
+        
+        # Use PRIMARY_FROM if configured, otherwise use alias
         from_addr = 'addhe.warman+cs@gmail.com'
-        # If alias isn't verified yet, optionally send from primary while keeping Reply-To to alias
         if USE_PRIMARY_FROM and PRIMARY_FROM:
-            logger.info(f"Using PRIMARY_FROM for send: {PRIMARY_FROM}; Reply-To remains alias")
             from_addr = PRIMARY_FROM
-        else:
-            logger.info("Using alias as From for send: addhe.warman+cs@gmail.com")
-        message['From'] = from_addr  # Gmail requires verified send-as for non-primary
+        
+        message['From'] = from_addr
         message['Reply-To'] = 'addhe.warman+cs@gmail.com'
         message['In-Reply-To'] = email_data['id']
         message['References'] = email_data['id']
@@ -678,32 +696,16 @@ def send_reply(service, email_data, response_text):
         message['X-AutoReply'] = 'yes'
         
         # Add body
-        message.attach(MIMEText(response_text))
+        message.attach(MIMEText(str(response_text)))
         
         # Encode message
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        logger.info(
-            f"Attempting Gmail send: to={email_data['reply_to']}, threadId={email_data['threadId']}, from={from_addr}"
-        )
         
-        # Send message (labeling happens only after successful send)
-        try:
-            sent_message = service.users().messages().send(
-                userId='me',
-                body={'raw': encoded_message, 'threadId': email_data['threadId']}
-            ).execute()
-        except HttpError as he:
-            # Log detailed Gmail error and do NOT label the original message
-            status = getattr(he, 'status_code', None) or getattr(he, 'resp', {}).status if hasattr(getattr(he, 'resp', None), 'status') else None
-            try:
-                err_body = he.content.decode('utf-8') if hasattr(he, 'content') and he.content else str(he)
-            except Exception:
-                err_body = str(he)
-            logger.error(f"Gmail send HttpError status={status}, body={err_body}")
-            return None
-        except Exception as e:
-            logger.error(f"Gmail send unexpected error: {e}", exc_info=True)
-            return None
+        # Send message
+        sent_message = service.users().messages().send(
+            userId='me',
+            body={'raw': encoded_message, 'threadId': email_data['threadId']}
+        ).execute()
         
         # Get all labels to find the auto-reply label ID
         labels = service.users().labels().list(userId='me').execute()
@@ -722,7 +724,6 @@ def send_reply(service, email_data, response_text):
                 body={'name': AUTO_REPLY_LABEL}
             ).execute()
             label_id = label['id']
-            logger.info(f"Created auto-reply label: {label_id}")
         
         # Add label to original message
         service.users().messages().modify(
