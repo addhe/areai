@@ -20,7 +20,7 @@ from google.cloud import aiplatform
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import requests
-import config
+# Config is loaded from environment variables
 
 # Try to import GenAI SDK (optional)
 try:
