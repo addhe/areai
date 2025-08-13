@@ -16,8 +16,11 @@ Sistem ini dirancang sebagai aplikasi serverless yang ditujukan untuk deployment
 ## Fitur Utama
 
 -   **Balasan Berbasis AI**: Menggunakan Vertex AI Gemini untuk menghasilkan respons email yang mirip manusia.
+-   **Integrasi Customer Service**: Verifikasi nasabah otomatis melalui API eksternal dengan informasi saldo real-time.
+-   **Session Management**: Isolasi percakapan berdasarkan subject email untuk privacy dan keamanan data.
 -   **Pemrosesan Real-time**: Memanfaatkan notifikasi push Gmail API melalui Pub/Sub untuk respons segera.
 -   **Aman & Terfilter**: Termasuk mekanisme keamanan untuk hanya memproses email tertentu (misalnya, berdasarkan alamat penerima seperti `+cs`), menyaring spam, dan menghindari loop balasan.
+-   **Environment Variables**: Konfigurasi aman menggunakan environment variables untuk API credentials.
 -   **Serverless**: Dibuat untuk berjalan di Google Cloud Run untuk skalabilitas dan efisiensi biaya.
 -   **Peralatan Komprehensif**: Termasuk skrip untuk penyiapan, pengujian, dan deployment.
 
@@ -26,11 +29,14 @@ Sistem ini dirancang sebagai aplikasi serverless yang ditujukan untuk deployment
 Berikut adalah gambaran umum file-file kunci di direktori ini:
 
 -   `main.py`: Aplikasi Flask inti yang menangani pesan Pub/Sub yang masuk, memproses email, dan mengatur logika balasan.
+-   `customer_service.py`: Modul terpisah untuk verifikasi nasabah dan integrasi dengan API eksternal.
 -   `generate_ai_genai.py`: Berisi fungsi untuk berinteraksi dengan model Gemini Vertex AI untuk pembuatan respons.
 -   `requirements.txt`: Mendaftar semua dependensi Python yang diperlukan untuk proyek.
--   `deploy.sh`: Skrip shell untuk mengotomatiskan proses deployment ke Google Cloud Run.
+-   `deploy.sh`: Skrip shell untuk mengotomatiskan proses deployment ke Google Cloud Run dengan validasi environment variables.
+-   `config.py`: File konfigurasi lokal (di .gitignore) untuk development, production menggunakan environment variables.
 -   `setup_gmail_watch.py`: Skrip untuk mengonfigurasi notifikasi Gmail API watch pada akun email target.
 -   `activate_gmail_watch.py` & `check_gmail_watch.py`: Skrip pembantu untuk mengelola siklus hidup Gmail watch.
+-   `debug_customer_service.py`: Skrip debug untuk testing customer service integration.
 -   `*test*.py`: Serangkaian skrip pengujian untuk memverifikasi berbagai komponen sistem, dari pengujian unit sederhana hingga pengujian integrasi komprehensif.
 
 ## Penyiapan dan Deployment
@@ -38,8 +44,39 @@ Berikut adalah gambaran umum file-file kunci di direktori ini:
 1.  **Prasyarat**: Pastikan Anda memiliki Proyek Google Cloud dengan API Gmail, API Pub/Sub, API Vertex AI, dan API Secret Manager diaktifkan.
 2.  **Izin**: Jalankan `setup_permissions.py` untuk mengonfigurasi peran IAM yang diperlukan untuk akun layanan.
 3.  **Autentikasi**: Jalankan `gmail_auth.py` (dari direktori `scripts` induk) untuk menghasilkan kredensial OAuth2 yang diperlukan dan menyimpannya di Secret Manager.
-4.  **Gmail Watch**: Jalankan `setup_gmail_watch.py` untuk menautkan akun Gmail Anda ke topik Pub/Sub.
-5.  **Deployment**: Jalankan skrip `deploy.sh` untuk membangun image container dan mendeploy layanan ke Google Cloud Run.
+4.  **Environment Variables**: Set required environment variables untuk deployment:
+    ```bash
+    export NASABAH_API_KEY="your-api-key-here"
+    # API key akan divalidasi oleh deploy script sebelum deployment
+    ```
+5.  **Gmail Watch**: Jalankan `setup_gmail_watch.py` untuk menautkan akun Gmail Anda ke topik Pub/Sub.
+6.  **Deployment**: Jalankan skrip `deploy.sh` untuk membangun image container dan mendeploy layanan ke Google Cloud Run.
+    ```bash
+    ./deploy.sh
+    # Script akan memvalidasi environment variables sebelum deployment
+    ```
+
+## Customer Service Integration
+
+Sistem ini terintegrasi dengan API eksternal untuk verifikasi nasabah dan informasi saldo:
+
+### Fitur Customer Service
+-   **Verifikasi Nasabah**: Otomatis mengecek status nasabah berdasarkan email pengirim
+-   **Informasi Saldo**: Menampilkan saldo terkini untuk nasabah yang terverifikasi
+-   **Session Isolation**: Setiap percakapan diisolasi berdasarkan hash MD5 dari subject email
+-   **Fallback Response**: Response generic jika nasabah tidak ditemukan atau API error
+
+### Environment Variables
+```bash
+NASABAH_API_URL=https://nasabah-api-361046956504.asia-southeast2.run.app/nasabah
+NASABAH_API_KEY=your-api-key-here
+```
+
+### Debug Customer Service
+```bash
+python debug_customer_service.py
+# Test customer service integration locally
+```
 
 ## Pengujian
 
@@ -47,6 +84,7 @@ Sistem ini mencakup berbagai skrip pengujian:
 -   `simple_test.py`: Tes dasar untuk memeriksa apakah endpoint layanan yang di-deploy responsif.
 -   `comprehensive_test.py`: Mensimulasikan pesan Pub/Sub untuk menguji seluruh alur pemrosesan.
 -   `test_genai.py`: Secara khusus menguji modul pembuatan respons AI.
+-   `debug_customer_service.py`: Test customer service module dan API integration.
 
 Jalankan skrip ini untuk memastikan semua bagian sistem berfungsi dengan benar sebelum dan sesudah deployment.
 

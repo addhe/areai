@@ -2,6 +2,31 @@
 
 Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
+## [2.2.0] - 2025-08-13
+
+### 🏗️ Refactoring & Modularization
+- **Customer Service Module**: Refactored customer verification logic into separate `customer_service.py` module for better modularity and easier debugging.
+- **Import Path Fixes**: Fixed import paths for Cloud Run environment using absolute imports (`functions.auto_reply.module`).
+- **Session Management**: Implemented session isolation using MD5 hash of email subject for privacy protection.
+
+### 🔒 Security & Configuration
+- **Environment Variables**: Migrated from hardcoded config to secure environment variable configuration.
+- **Deploy Script Security**: Updated `deploy.sh` to validate required environment variables and prevent hardcoded API keys.
+- **Config File Protection**: Ensured `config.py` remains in `.gitignore` for security while providing fallback to environment variables.
+
+### 🔧 Bug Fixes & Improvements
+- **Logger Configuration**: Fixed logger initialization order to prevent `NameError` during startup.
+- **Reply Loop Detection**: Adjusted threshold from 2 to 3 reply indicators to allow normal email chains.
+- **API Integration**: Fixed customer API integration with proper error handling and fallback responses.
+
+### 🧪 Testing & Debugging
+- **Debug Tools**: Added `debug_customer_service.py` for local testing of customer service integration.
+- **Comprehensive Logging**: Enhanced logging for customer verification, API calls, and error tracking.
+
+### 📚 Documentation
+- **README Updates**: Updated documentation with customer service integration details and environment variable setup.
+- **Deployment Guide**: Added secure deployment instructions with environment variable validation.
+
 ## [2.1.0] - 2025-08-12
 
 ### 🔒 Keamanan & Privasi

@@ -20,14 +20,35 @@ from google.cloud import aiplatform
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import requests
-try:
-    import config
-except ImportError:
-    config = None
 
-# Configure logging
+# Configure logging first before any logger usage
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+try:
+    from functions.auto_reply.customer_service import get_customer_context
+    logger.info("Successfully imported customer_service module (absolute import)")
+except ImportError:
+    try:
+        from customer_service import get_customer_context
+        logger.info("Successfully imported customer_service module (relative import)")
+    except ImportError as e:
+        logger.error(f"Failed to import customer_service: {e}")
+        # Fallback: define a simple customer context function
+        def get_customer_context(sender_email):
+            logger.warning("Using fallback customer context - customer_service module not available")
+            return False, {'name': 'Nasabah', 'status': 'unknown', 'saldo_info': ''}
+
+try:
+    from functions.auto_reply import config
+    logger.info("Successfully imported config.py (absolute import)")
+except ImportError:
+    try:
+        import config
+        logger.info("Successfully imported config.py (relative import)")
+    except ImportError:
+        logger.error("Failed to import config.py - file not found or import error")
+        config = None
 
 # Try to import optional GenAI SDK, fallback to Vertex AI only
 try:
@@ -115,7 +136,7 @@ def is_email_allowed(email_data):
         for indicator in reply_indicators:
             reply_count += subject.count(indicator)
             
-        if reply_count >= 2:
+        if reply_count >= 3:
             logger.info(f"Preventing reply loop: Multiple reply indicators in subject - {subject}")
             return False, "Email has multiple reply indicators in subject"
         
@@ -171,7 +192,7 @@ def is_email_allowed(email_data):
         if any(keyword in subject or keyword in body for keyword in spam_keywords):
             logger.info("Email contains spam keywords")
             return False, "Email contains spam keywords"
-        
+
         logger.info("Email passed security checks")
         return True, "Email allowed"
         
@@ -407,155 +428,26 @@ def add_auto_reply_label(service, msg_id):
         logger.error(f"Error adding auto-reply label: {e}")
         return False
 
-def normalize_email(email):
-    """Normalize email address for consistent comparison.
-    
-    Args:
-        email (str): Email address to normalize
-        
-    Returns:
-        str: Normalized email address (lowercase, stripped)
-    """
-    if not email:
-        return ""
-    
-    # Extract email from format like "Name <email@example.com>"
-    if '<' in email and '>' in email:
-        email = email.split('<')[1].split('>')[0]
-    
-    return email.lower().strip()
+# Customer checking functions moved to customer_service.py module
 
-def check_is_nasabah(email):
-    """Check if the sender is a known customer via API.
-    
-    Returns:
-        tuple: (is_nasabah, customer_data)
-            - is_nasabah (bool): True if email belongs to a customer, False otherwise
-            - customer_data (dict): Customer data if available, None otherwise
-    """
-    # Normalize email before checking
-    normalized_email = normalize_email(email)
-    logger.info(f"Checking customer status for: {email} (normalized: {normalized_email})")
-    
-    # Return early if email is empty after normalization
-    if not normalized_email:
-        logger.warning("Empty email after normalization, cannot check customer status")
-        return False, None
-    try:
-        # Skip API call if config is not available
-        if not config:
-            logger.info("Config not available, skipping customer API check")
-            return False, None
-            
-        headers = {
-            'x-api-key': config.NASABAH_API_KEY,
-            'Accept': 'application/json'
-        }
-        params = {'email': normalized_email}
-        response = requests.get(config.NASABAH_API_URL, headers=headers, params=params, timeout=5)
-
-        # Coba parse respons JSON jika ada
-        response_data = None
-        try:
-            if response.text and response.text.strip():
-                response_data = response.json()
-        except ValueError as e:
-            logger.error(f"Error parsing JSON response: {e} - Raw response: {response.text}")
-
-        # Status 200 dengan data yang valid
-        if response.status_code == 200:
-            # Periksa apakah respons memiliki data yang diharapkan
-            if response_data and isinstance(response_data, dict):
-                # Jika respons berisi array data, ambil item pertama
-                if 'data' in response_data and isinstance(response_data['data'], list) and len(response_data['data']) > 0:
-                    customer_data = response_data['data'][0]
-                    # Periksa apakah email dalam data cocok dengan email yang dinormalisasi
-                    if 'email' in customer_data:
-                        api_email = normalize_email(customer_data['email'])
-                        if api_email == normalized_email:
-                            logger.info(f"Customer found in data array for email: {email}")
-                            return True, response_data
-                        else:
-                            logger.warning(f"Email mismatch in data array: requested {normalized_email}, but API returned {api_email}")
-                            return False, None
-                    else:
-                        logger.warning(f"Email field missing in customer data for: {email}")
-                        return False, None
-                # Jika API mengembalikan indikator status nasabah spesifik
-                if 'is_nasabah' in response_data:
-                    is_nasabah = response_data['is_nasabah']
-                    if is_nasabah:
-                        logger.info(f"Customer confirmed for email: {email}")
-                        return True, response_data
-                    else:
-                        logger.info(f"API explicitly confirmed non-customer status for email: {email}")
-                        return False, None
-                # Jika tidak ada indikator spesifik, periksa apakah ada data nasabah yang valid
-                elif 'email' in response_data:
-                    # Periksa apakah email dalam respons cocok dengan email yang dinormalisasi
-                    api_email = normalize_email(response_data['email'])
-                    if api_email == normalized_email:
-                        logger.info(f"Customer found for email: {email} (matched email in response)")
-                        return True, response_data
-                    else:
-                        logger.warning(f"Email mismatch: requested {normalized_email}, but API returned {api_email}")
-                        return False, None
-                else:
-                    logger.warning(f"API response lacks customer verification data for email: {email}")
-                    return False, None
-            else:
-                logger.warning(f"API returned 200 but with unexpected data format for email: {email}")
-                # Default ke False jika format data tidak sesuai harapan
-                return False, None
-                
-        # Status 404 berarti nasabah tidak ditemukan
-        elif response.status_code == 404:
-            logger.info(f"Customer not found for email: {email}")
-            return False, None
-            
-        # Status lain dianggap error
-        else:
-            logger.error(f"Error checking customer status: API returned status {response.status_code} - {response.text}")
-            # Default ke False untuk error
-            return False, None
-
-    except Exception as e:
-        logger.error(f"Error calling Nasabah API: {e}")
-        return False, None # Default to not being a customer if API fails
-
-def generate_ai_response(email_data, is_nasabah, customer_data=None):
+def generate_ai_response(email_data, is_nasabah, customer_info):
     """Generate an AI response using GenAI SDK with Vertex AI backend.
     
     Args:
         email_data (dict): Email data including from, subject, body
         is_nasabah (bool): Whether the sender is a verified customer
-        customer_data (dict, optional): Customer data from API including saldo info
+        customer_info (dict): Customer info from customer_service module
     """
     try:
         logger.info("Initializing Vertex AI for per-email chat session")
         # Initialize Vertex AI explicitly (stateless per request)
         vertexai.init(project=PROJECT_ID, location="us-central1")
         
-        # Ekstrak informasi saldo jika tersedia
-        saldo_info = ""
-        if is_nasabah and customer_data and isinstance(customer_data, dict):
-            # Cek apakah data customer berada dalam array 'data'
-            if 'data' in customer_data and isinstance(customer_data['data'], list) and len(customer_data['data']) > 0:
-                customer_data = customer_data['data'][0]  # Ambil data nasabah pertama
-            
-            # Ekstrak dan format saldo dengan benar
-            if 'saldo' in customer_data:
-                saldo_value = customer_data['saldo']
-                # Format saldo dengan pemisah ribuan
-                formatted_saldo = "{:,}".format(int(saldo_value)).replace(',', '.')
-                saldo_info = f"\n- Saldo Anda: Rp {formatted_saldo}"
-                logger.info(f"Extracted saldo: {saldo_value}, formatted as: {formatted_saldo}")
-            elif 'balance' in customer_data:
-                saldo_value = customer_data['balance']
-                # Format saldo dengan pemisah ribuan
-                formatted_saldo = "{:,}".format(int(saldo_value)).replace(',', '.')
-                saldo_info = f"\n- Saldo Anda: Rp {formatted_saldo}"
-                logger.info(f"Extracted balance: {saldo_value}, formatted as: {formatted_saldo}")
+        # Extract customer info from customer_service module
+        customer_name = customer_info.get('name', 'Nasabah') if customer_info else 'Nasabah'
+        saldo_info = customer_info.get('saldo_info', '') if customer_info else ''
+
+        logger.info(f"Customer info - Name: {customer_name}, Is Customer: {is_nasabah}, Saldo Info: {bool(saldo_info)}")
         
         # Preprocess: strip quoted history to avoid cross-thread leakage
         body_for_model = strip_quoted_text(email_data.get('body', '')) if STRICT_PRIVACY else email_data.get('body', '')
@@ -779,11 +671,11 @@ def process_message(service, msg_id):
         
         # Check if sender is a customer
         sender_email = email_data.get('from', '').split('<')[-1].split('>')[0]
-        is_nasabah, customer_data = check_is_nasabah(sender_email)
+        is_nasabah, customer_info = get_customer_context(sender_email)
 
         # Generate AI response with customer context
         logger.info("Generating AI response for email")
-        response_text = generate_ai_response(email_data, is_nasabah, customer_data)
+        response_text = generate_ai_response(email_data, is_nasabah, customer_info)
         
         # Send reply
         logger.info("Sending auto-reply email")
