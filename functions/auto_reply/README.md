@@ -1,6 +1,18 @@
 # Sistem Balas Otomatis Email dengan Gmail API dan Vertex AI
 
+[![Version](https://img.shields.io/badge/version-v2.2.0-blue.svg)](https://github.com/addhe/areai/releases/tag/v2.2.0)
+[![Status](https://img.shields.io/badge/status-production-green.svg)](https://auto-reply-email-361046956504.us-central1.run.app/)
+[![Security](https://img.shields.io/badge/security-environment%20variables-green.svg)](#security--configuration)
+
 Direktori ini berisi sistem balas email otomatis canggih yang didukung AI, dirancang untuk berjalan di Google Cloud. Sistem ini memanfaatkan Gmail API, Pub/Sub untuk notifikasi real-time, dan Vertex AI (khususnya model Gemini) untuk menghasilkan respons yang cerdas dan sesuai konteks terhadap email yang masuk.
+
+## 🚀 Current Deployment Status
+
+- **Service URL**: https://auto-reply-email-361046956504.us-central1.run.app/
+- **Version**: v2.2.0 (Latest)
+- **Revision**: auto-reply-email-00031-qfg
+- **Status**: ✅ Production Ready
+- **Customer Service**: ✅ Integrated & Operational
 
 ## Arsitektur
 
@@ -77,6 +89,19 @@ NASABAH_API_KEY=your-api-key-here
 python debug_customer_service.py
 # Test customer service integration locally
 ```
+
+## 📋 Release Notes
+
+### v2.2.0 (Latest) - 2025-08-13
+- ✅ **Customer Service Integration**: Full API integration with nasabah verification
+- ✅ **Secure Configuration**: Environment variables for API credentials
+- ✅ **Session Isolation**: Privacy protection using email subject hash
+- ✅ **Enhanced Security**: No hardcoded secrets, proper .gitignore protection
+- ✅ **Improved Debugging**: Comprehensive logging and debug tools
+- ✅ **Production Ready**: Fully tested and deployed to Cloud Run
+
+### Previous Versions
+See [CHANGELOG.md](./CHANGELOG.md) for complete version history.
 
 ## Pengujian
 
