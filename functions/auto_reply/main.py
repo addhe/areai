@@ -994,7 +994,7 @@ def renew_watch():
         logger.info("Setting up Gmail API watch")
         request_body = {
             'labelIds': ['INBOX'],
-            'topicName': f'projects/{PROJECT_ID}/topics/new-email'
+            'topicName': f'projects/{PROJECT_ID}/topics/gmail-notifications'
         }
         
         # Execute watch request
