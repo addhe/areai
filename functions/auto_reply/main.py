@@ -578,8 +578,34 @@ def send_reply(service, email_data, response_text):
         
         message['From'] = from_addr
         message['Reply-To'] = 'squidgamecs2025@gmail.com'
-        message['In-Reply-To'] = email_data['id']
-        message['References'] = email_data['id']
+
+        # Threading: prefer RFC Message-ID/References from the original message
+        orig_msg_id = None
+        orig_refs = None
+        try:
+            meta = service.users().messages().get(
+                userId='me', id=email_data['id'],
+                format='metadata', metadataHeaders=['Message-Id', 'Message-ID', 'References']
+            ).execute()
+            headers_list = meta.get('payload', {}).get('headers', [])
+            hdrs = {h.get('name', '').lower(): h.get('value', '') for h in headers_list}
+            # Some clients use Message-Id, some Message-ID; normalize
+            orig_msg_id = hdrs.get('message-id')
+            orig_refs = hdrs.get('references')
+            if not orig_msg_id:
+                logger.warning("Original Message-ID header not found; will fallback to Gmail message id for threading")
+        except Exception as hdr_err:
+            logger.warning(f"Failed to fetch original headers for threading: {hdr_err}")
+
+        if orig_msg_id:
+            message['In-Reply-To'] = orig_msg_id
+            message['References'] = (f"{orig_refs} {orig_msg_id}".strip() if orig_refs else orig_msg_id)
+            logger.info(f"Threading headers set from RFC: In-Reply-To={orig_msg_id}, References={(orig_refs + ' ' if orig_refs else '') + orig_msg_id}")
+        else:
+            # Fallback: use Gmail message id (works for Gmail, not all clients)
+            message['In-Reply-To'] = email_data['id']
+            message['References'] = email_data['id']
+            logger.info(f"Threading headers fallback: In-Reply-To/References set to Gmail message id {email_data['id']}")
         
         # Add auto-reply headers to prevent reply loops
         message['Auto-Submitted'] = 'auto-replied'
