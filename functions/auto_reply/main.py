@@ -79,7 +79,7 @@ USE_PRIMARY_FROM = os.environ.get('USE_PRIMARY_FROM', 'false').lower() == 'true'
 WATCH_EXPIRY_DAYS = 7  # Gmail API watch expires after 7 days
 
 # Email security configuration
-ALLOWED_EMAIL_ADDRESS = 'addhe.warman+cs@gmail.com'  # Only respond to emails sent to this address
+ALLOWED_EMAIL_ADDRESS = 'squidgamecs2025@gmail.com'  # Only respond to emails sent to this address
 MAX_EMAIL_AGE_HOURS = 24  # Only process emails from last 24 hours
 ALLOWED_SENDERS = [  # Whitelist of allowed sender domains (optional)
     # Add trusted domains here, e.g., 'gmail.com', 'company.com'
