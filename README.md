@@ -203,3 +203,18 @@ Balas email ini dengan nada formal. Jangan sertakan tanda tangan pribadi.
 ## 📜 License
 
 Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+
+## Email Configuration
+To change the support email used by the auto-reply system:
+1) Update config:
+   - In `.env`: set DESTINATION_EMAIL to the target email (e.g., `squidgamecs2025@gmail.com`).
+   - If `functions/auto_reply` uses an allow-list env (e.g., `ALLOWED_EMAIL_ADDRESS`), update it too.
+2) Re-authenticate Gmail:
+   - Run: `python3 scripts/gmail_auth.py --project-id <PROJECT_ID> --credentials-file <client_secret.json> --save-to-secret-manager --topic projects/<PROJECT_ID>/topics/gmail-notifications`
+   - Sign in using the new Gmail account and grant permissions.
+3) Verify Secret Manager token and Gmail watch.
+4) Redeploy or restart the service if needed so new env and token are used.
+
+Notes:
+- Headers `From` and `Reply-To` follow the configured email.
+- Output sanitization keeps only the configured address unredacted.

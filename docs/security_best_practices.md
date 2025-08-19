@@ -834,6 +834,6 @@ Implementing these security best practices will help ensure your Auto Reply Emai
 
 - **Per-email chat isolation**: Initialize Vertex AI chat with `start_chat(history=[])` for setiap email untuk mencegah kebocoran memori lintas pelanggan/thread.
 - **Strip quoted history**: Hapus teks kutipan/riwayat dari body sebelum dikirim ke AI agar konteks terbatas pada email aktif.
-- **Output sanitization**: Redaksi alamat email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun) dari output AI.
-- **Reply-To alias enforcement**: Set `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` untuk memastikan balasan masuk melalui jalur alias yang dilindungi.
+- **Output sanitization**: Redaksi alamat email selain `squidgamecs2025@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun) dari output AI.
+- **Reply-To alias enforcement**: Set `From` dan `Reply-To` ke `squidgamecs2025@gmail.com` untuk memastikan balasan masuk melalui jalur alias yang dilindungi.
 - **Scope minimization**: Hanya kirimkan field yang diperlukan (subject, potongan body terpilih) ke AI; hindari metadata sensitif yang tidak perlu.

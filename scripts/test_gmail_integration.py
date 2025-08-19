@@ -115,7 +115,7 @@ def check_pubsub_subscription(project_id, topic_name, timeout=60):
 def main():
     """Main function to test Gmail API integration."""
     token_file = 'token.json'
-    test_email = 'addhe.warman+cs@gmail.com'
+    test_email = 'squidgamecs2025@gmail.com'
     
     # Get project ID and topic name from command line arguments
     import argparse

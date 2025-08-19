@@ -414,7 +414,7 @@ Green Grocery Delivery Customer Care Team
 
 - **Per-email chat isolation**: Start a fresh chat session with `start_chat(history=[])` for each email to prevent cross-customer/thread memory.
 - **Strip quoted history**: Remove quoted/forwarded content from the email body before constructing the prompt.
-- **Sanitize outputs**: Redact any email addresses except `addhe.warman+cs@gmail.com` and long digit sequences that may contain PII (e.g., KTP/account numbers).
+- **Sanitize outputs**: Redact any email addresses except `squidgamecs2025@gmail.com` and long digit sequences that may contain PII (e.g., KTP/account numbers).
 - **Instructional constraints**: Include explicit instructions in the prompt to avoid referencing other emails/customers and to use only the current email context and verified customer data.
 
 ## Conclusion

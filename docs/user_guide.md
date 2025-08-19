@@ -304,5 +304,20 @@ For additional support:
 
 - **Isolasi Chat per Email**: Sistem memulai sesi chat Vertex AI baru per email menggunakan `start_chat(history=[])` agar tidak ada memori silang antar pelanggan/thread.
 - **Stripping Riwayat**: Teks kutipan/riwayat dihapus dari body sebelum diproses untuk membatasi konteks.
-- **Sanitasi Output**: Balasan AI disaring untuk meredaksi email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII).
-- **Header Aman**: `From` dan `Reply-To` disetel ke `addhe.warman+cs@gmail.com` untuk memastikan balasan diteruskan ke alias +cs.
+- **Sanitasi Output**: Balasan AI disaring untuk meredaksi email selain `squidgamecs2025@gmail.com` dan deretan digit panjang (PII).
+- **Header Aman**: `From` dan `Reply-To` disetel ke `squidgamecs2025@gmail.com` untuk memastikan balasan diteruskan ke alias +cs.
+
+## Email Configuration
+Langkah mengubah email layanan:
+1) Perbarui konfigurasi:
+   - Di `.env`: set DESTINATION_EMAIL ke alamat tujuan (mis. `squidgamecs2025@gmail.com`).
+   - Jika ada variabel env `ALLOWED_EMAIL_ADDRESS`, perbarui juga.
+2) Re-auth Gmail:
+   - Jalankan: `python3 scripts/gmail_auth.py --project-id <PROJECT_ID> --credentials-file <client_secret.json> --save-to-secret-manager --topic projects/<PROJECT_ID>/topics/gmail-notifications`
+   - Login dengan akun Gmail baru dan izinkan akses.
+3) Verifikasi Secret & Gmail watch.
+4) Redeploy / restart layanan jika diperlukan.
+
+Catatan:
+- Header `From`/`Reply-To` mengikuti email yang dikonfigurasi.
+- Sanitasi output hanya mempertahankan alamat yang dikonfigurasi.

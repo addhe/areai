@@ -18,7 +18,7 @@ ENV CUSTOMER_API_ENDPOINT=${CUSTOMER_API_ENDPOINT:-"https://nasabah-api-endpoint
 
 # Email configuration
 ARG DESTINATION_EMAIL
-ENV DESTINATION_EMAIL=${DESTINATION_EMAIL:-"addhe.warman+cs@gmail.com"}
+ENV DESTINATION_EMAIL=${DESTINATION_EMAIL:-"squidgamecs2025@gmail.com"}
 
 # Expose port untuk Cloud Run
 EXPOSE 8080

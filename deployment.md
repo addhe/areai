@@ -66,8 +66,8 @@ After the deployment script completes successfully, you should verify that the s
     - `POST /test-pubsub` — simulasi payload Pub/Sub; endpoint `/process` harus memproses dan merespons `200 OK`.
 
 5.  **Header Routing Validation**:
-    Kirim email ke `addhe.warman+cs@gmail.com`, lalu periksa balasan keluar:
-    - Header `From` dan `Reply-To` harus `addhe.warman+cs@gmail.com`.
+    Kirim email ke `squidgamecs2025@gmail.com`, lalu periksa balasan keluar:
+    - Header `From` dan `Reply-To` harus `squidgamecs2025@gmail.com`.
     - Balasan tidak mengandung alamat email lain (kecuali alias +cs) atau deretan digit panjang yang sensitif.
 
 ## Important Notes
