@@ -87,7 +87,7 @@ def main():
     
     print("\n" + "=" * 50)
     print("💡 Remember: System only processes emails sent to:")
-    print("   addhe.warman+cs@gmail.com")
+    print("   squidgamecs2025@gmail.com")
     print("\n📧 If you want to test, send email to the +cs address!")
 
 if __name__ == "__main__":

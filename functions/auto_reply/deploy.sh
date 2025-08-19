@@ -26,7 +26,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --region ${REGION} \
   --allow-unauthenticated \
   --service-account ${SERVICE_ACCOUNT} \
-  --set-env-vars="PROJECT_ID=${PROJECT_ID},SECRET_NAME=gmail-oauth-token,VERTEX_MODEL=gemini-2.5-flash-lite,USE_PRIMARY_FROM=true,PRIMARY_FROM=addhe.warman@gmail.com,NASABAH_API_URL=https://nasabah-api-361046956504.asia-southeast2.run.app/nasabah,NASABAH_API_KEY=${NASABAH_API_KEY}" \
+  --set-env-vars="PROJECT_ID=${PROJECT_ID},SECRET_NAME=gmail-oauth-token,VERTEX_MODEL=gemini-2.5-flash-lite,USE_PRIMARY_FROM=true,PRIMARY_FROM=squidgamecs2025@gmail.com,NASABAH_API_URL=https://nasabah-api-361046956504.asia-southeast2.run.app/nasabah,NASABAH_API_KEY=${NASABAH_API_KEY}" \
   --memory 512Mi \
   --cpu 1 \
   --timeout 300s \

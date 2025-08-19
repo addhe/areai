@@ -344,7 +344,7 @@ def sanitize_generated_text(text):
         # Redact email addresses except our cs alias
         def _mask_email(m):
             email = m.group(0)
-            if 'addhe.warman+cs@gmail.com' in email:
+            if 'squidgamecs2025@gmail.com' in email:
                 return email
             return '[redacted-email]'
         text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", _mask_email, text)
@@ -572,12 +572,12 @@ def send_reply(service, email_data, response_text):
         message['subject'] = f"Re: {email_data['subject']}"
         
         # Use PRIMARY_FROM if configured, otherwise use alias
-        from_addr = 'addhe.warman+cs@gmail.com'
+        from_addr = 'squidgamecs2025@gmail.com'
         if USE_PRIMARY_FROM and PRIMARY_FROM:
             from_addr = PRIMARY_FROM
         
         message['From'] = from_addr
-        message['Reply-To'] = 'addhe.warman+cs@gmail.com'
+        message['Reply-To'] = 'squidgamecs2025@gmail.com'
         message['In-Reply-To'] = email_data['id']
         message['References'] = email_data['id']
         

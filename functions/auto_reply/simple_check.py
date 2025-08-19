@@ -71,7 +71,7 @@ def main():
     print("   If Pub/Sub components are missing, run:")
     print("   python setup_gmail_watch.py")
     print("\n   To test the system, send an email to:")
-    print("   addhe.warman@gmail.com")
+    print("   squidgamecs2025@gmail.com")
 
 if __name__ == "__main__":
     main()

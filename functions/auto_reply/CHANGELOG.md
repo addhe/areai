@@ -32,10 +32,10 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 ### 🔒 Keamanan & Privasi
 - Isolasi sesi AI per email menggunakan Vertex AI `GenerativeModel.start_chat(history=[])` agar tidak ada memori silang antar pelanggan/thread.
 - Guardrail privasi ketat: strip teks kutipan/riwayat dari body email sebelum diproses dan sanitasi keluaran AI (redaksi alamat email non-+cs dan deretan digit panjang/PII).
-- Pengaturan header balasan: set `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` untuk memastikan jalur balasan aman via alias +cs.
+- Pengaturan header balasan: set `From` dan `Reply-To` ke `squidgamecs2025@gmail.com` untuk memastikan jalur balasan aman via alias +cs.
 
 ### ✉️ Perilaku Balasan
-- Hanya membalas email yang ditujukan ke alias `addhe.warman+cs@gmail.com` dan bukan dari sistem sendiri (anti-reply loop).
+- Hanya membalas email yang ditujukan ke alias `squidgamecs2025@gmail.com` dan bukan dari sistem sendiri (anti-reply loop).
 - Penambahan label Gmail untuk mencegah balasan ganda pada pesan yang sama.
 
 ### 🔧 Operasional & Ketahanan
@@ -79,7 +79,7 @@ Semua perubahan penting pada Sistem Balas Otomatis Email Gmail didokumentasikan 
 - **Logging Komprehensif**: Menambahkan logging terperinci di seluruh sistem
 
 ### 🔒 Peningkatan Keamanan
-- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `addhe.warman+cs@gmail.com`
+- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `squidgamecs2025@gmail.com`
 - **Penyaringan Berbasis Waktu**: Hanya memproses email dari 24 jam terakhir
 - **Perlindungan Spam**: Penyaringan kata kunci spam bawaan
 - **Pencegahan Duplikat**: Menambahkan label Gmail untuk mencegah balasan ganda

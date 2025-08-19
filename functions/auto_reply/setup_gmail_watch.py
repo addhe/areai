@@ -111,16 +111,16 @@ def main():
     
     print("\n" + "=" * 50)
     print("✅ Gmail Auto-Reply System Setup Complete!")
-    print(f"📧 Target Email: addhe.warman+cs@gmail.com")
+    print(f"📧 Target Email: squidgamecs2025@gmail.com")
     print(f"🔔 Topic: projects/{PROJECT_ID}/topics/{TOPIC_NAME}")
     print(f"📡 Endpoint: {PUSH_ENDPOINT}")
     print(f"⏰ Watch expires: {watch_result.get('expiration')}")
     print("\n🔒 Security Features:")
-    print("   - Only responds to emails sent to addhe.warman+cs@gmail.com")
+    print("   - Only responds to emails sent to squidgamecs2025@gmail.com")
     print("   - Only processes emails from last 24 hours")
     print("   - Filters out spam keywords")
     print("   - Prevents duplicate replies with auto-reply labels")
-    print("\n🧪 To test, send an email to: addhe.warman+cs@gmail.com")
+    print("\n🧪 To test, send an email to: squidgamecs2025@gmail.com")
 
 if __name__ == "__main__":
     main()

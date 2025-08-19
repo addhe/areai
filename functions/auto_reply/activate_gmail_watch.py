@@ -47,7 +47,7 @@ def activate_gmail_watch():
         result = service.users().watch(userId='me', body=request_body).execute()
         
         print("✅ Gmail watch activated successfully!")
-        print(f"📧 Monitoring: addhe.warman@gmail.com")
+        print(f"📧 Monitoring: squidgamecs2025@gmail.com")
         print(f"🔔 Topic: {topic_name}")
         print(f"📊 History ID: {result.get('historyId')}")
         print(f"⏰ Expires: {result.get('expiration')}")
@@ -69,10 +69,10 @@ def main():
     if success:
         print("🎉 Setup Complete!")
         print("\n📝 Next Steps:")
-        print("1. Send a test email to: addhe.warman+cs@gmail.com")
+        print("1. Send a test email to: squidgamecs2025@gmail.com")
         print("2. Check logs: gcloud logging read \"resource.type=cloud_run_revision AND resource.labels.service_name=auto-reply-email\" --limit=10 --project=awanmasterpiece")
         print("\n🔒 Security Features Active:")
-        print("   ✅ Only responds to emails sent to addhe.warman+cs@gmail.com")
+        print("   ✅ Only responds to emails sent to squidgamecs2025@gmail.com")
         print("   ✅ Only processes emails from last 24 hours")
         print("   ✅ Filters out spam keywords")
         print("   ✅ Prevents duplicate replies")

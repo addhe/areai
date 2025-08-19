@@ -52,7 +52,7 @@ def run_test(email_from, subject, body):
 if __name__ == "__main__":
     # Test case 1: Email dari nasabah terdaftar
     run_test(
-        email_from='addhe.warman@outlook.co.id',
+        email_from='squidgamecs2025@outlook.co.id',
         subject='Pertanyaan tentang produk',
         body='Halo, saya ingin bertanya tentang detail produk terbaru Anda.'
     )

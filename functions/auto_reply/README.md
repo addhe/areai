@@ -124,7 +124,7 @@ Sistem balas otomatis email Gmail yang aman dan didukung AI, di-deploy di Google
 - **Cloud Native**: Di-deploy di Google Cloud Run dengan penskalaan otomatis
 
 ### Keamanan & Penyaringan
-- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `addhe.warman+cs@gmail.com`
+- **Penyaringan Alamat Email**: Hanya merespons email yang dikirim ke `squidgamecs2025@gmail.com`
 - **Penyaringan Berbasis Waktu**: Hanya memproses email dari 24 jam terakhir
 - **Perlindungan Spam**: Penyaringan kata kunci spam bawaan
 - **Pencegahan Duplikat**: Menambahkan label Gmail untuk mencegah balasan ganda ke email yang sama
@@ -166,7 +166,7 @@ Sistem balas otomatis email Gmail yang aman dan didukung AI, di-deploy di Google
 - `VERTEX_MODEL` - AI model name (default: `gemini-2.5-flash-lite`)
 
 ### Security Settings (Internal)
-- `ALLOWED_EMAIL_ADDRESS` - Target email address (`addhe.warman+cs@gmail.com`)
+- `ALLOWED_EMAIL_ADDRESS` - Target email address (`squidgamecs2025@gmail.com`)
 - `MAX_EMAIL_AGE_HOURS` - Email age limit (24 hours)
 - `AUTO_REPLY_LABEL` - Gmail label for processed emails (`Auto-Replied`)
 
@@ -221,7 +221,7 @@ Sistem balas otomatis email Gmail yang aman dan didukung AI, di-deploy di Google
 ## 🧪 Testing
 
 ### Manual Testing
-Send an email to `addhe.warman+cs@gmail.com` with:
+Send an email to `squidgamecs2025@gmail.com` with:
 - **Subject**: "Test AI Auto-Reply"
 - **Body**: "Hello, I need help with your services."
 
@@ -321,12 +321,12 @@ python3 test_genai_vertex.py
 - **Isolasi Chat per Email**: `generate_ai_response()` kini menggunakan `GenerativeModel(...).start_chat(history=[])` per email sehingga tidak ada memori silang antar pelanggan/thread.
 - **Guardrail Privasi**:
   - Menghapus kutipan/riwayat dari body email sebelum diproses AI.
-  - Menyaring keluaran AI untuk meredaksi alamat email selain `addhe.warman+cs@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun).
+  - Menyaring keluaran AI untuk meredaksi alamat email selain `squidgamecs2025@gmail.com` dan deretan digit panjang (PII seperti nomor identitas/akun).
 - **Routing Header Balasan**:
-  - `send_reply()` menyetel `From` dan `Reply-To` ke `addhe.warman+cs@gmail.com` agar balasan pelanggan selalu menuju alias +cs yang terlindungi.
+  - `send_reply()` menyetel `From` dan `Reply-To` ke `squidgamecs2025@gmail.com` agar balasan pelanggan selalu menuju alias +cs yang terlindungi.
 - **Endpoint Operasional**:
   - `GET /check-watch-status` — memeriksa status Gmail watch.
   - `POST /renew-watch` — memperbarui Gmail watch sebelum kedaluwarsa.
   - `POST /test-pubsub` — uji integrasi Pub/Sub dengan simulasi pesan.
 
-Catatan: Sistem hanya merespons email yang ditujukan ke `addhe.warman+cs@gmail.com` dan menerapkan label untuk mencegah balasan ganda serta menghindari reply loop.
+Catatan: Sistem hanya merespons email yang ditujukan ke `squidgamecs2025@gmail.com` dan menerapkan label untuk mencegah balasan ganda serta menghindari reply loop.

@@ -17,7 +17,7 @@ def test_direct_message():
     # Create a test Pub/Sub message
     # This simulates what Gmail sends when a new email arrives
     test_message = {
-        "emailAddress": "addhe.warman@gmail.com",
+        "emailAddress": "squidgamecs2025@gmail.com",
         "historyId": "23137900"  # Use a recent history ID
     }
     
