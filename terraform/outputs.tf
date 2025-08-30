@@ -9,13 +9,13 @@ output "pubsub_topic" {
 }
 
 output "function_name" {
-  description = "The name of the deployed Cloud Function"
-  value       = google_cloudfunctions_function.auto_reply_function.name
+  description = "The name of the deployed Cloud Function (null if disabled)"
+  value       = var.enable_cloud_function ? google_cloudfunctions_function.auto_reply_function[0].name : null
 }
 
 output "function_url" {
-  description = "The URL of the deployed Cloud Function"
-  value       = google_cloudfunctions_function.auto_reply_function.https_trigger_url
+  description = "The URL of the deployed Cloud Function (null if disabled)"
+  value       = var.enable_cloud_function ? google_cloudfunctions_function.auto_reply_function[0].https_trigger_url : null
 }
 
 output "service_account" {
@@ -24,6 +24,6 @@ output "service_account" {
 }
 
 output "storage_bucket" {
-  description = "The storage bucket for Cloud Function source code"
-  value       = google_storage_bucket.function_bucket.name
+  description = "The storage bucket for Cloud Function source code (null if disabled)"
+  value       = var.enable_cloud_function ? google_storage_bucket.function_bucket[0].name : null
 }

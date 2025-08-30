@@ -8,3 +8,9 @@ project_id           = "your-gcp-project-id"
 region               = "us-central1"
 customer_api_endpoint = "https://api.example.com/customers"
 notification_channels = ["projects/your-project/notificationChannels/channel-id"]
+
+# Base Cloud Run URL where the auto-reply service is deployed
+cloud_run_url_base   = "https://auto-reply-email-361046956504.us-central1.run.app"
+
+# Timezone for Cloud Scheduler cron schedules
+scheduler_timezone   = "Asia/Jakarta"
